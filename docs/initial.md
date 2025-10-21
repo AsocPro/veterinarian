@@ -3,11 +3,15 @@
 This project is a browser-based editor for "pet" CLI snippet TOML files. It allows users to upload, create, edit, and download snippet files locally. The app uses Web Components for UI modularity, runs without a server, and features a sidebar for file management and a main pane for snippet editing with advanced features like variable highlighting and editing.
 
 ## High-Level Architecture
-- index.html: Entry point with inline Web Components (file-list, snippet-list, snippet-item)
+- index.html: Entry point with global state management and file operations
 - styles.css: Shared generic styles (layout, zebra, highlights, buttons)
+- components/file-list.js: File list sidebar Web Component (upload, new, select, close)
+- components/snippet-list.js: Snippet list Web Component (filtering, search, bulk operations)
+- components/snippet-item.js: Individual snippet editor Web Component (edit fields, variables, tags)
 - utils/toml-parser.js: TOML parsing/stringifying with case-insensitive field handling
 - utils/var-parser.js: Variable extraction, color mapping, and command updating
 - Data Model: In-memory array of open files, each with {name, content (string), parsed (object), dirty (boolean)}
+- Component Communication: Components access main app via window.* functions (createNewFile, selectFile, closeFile, markFileDirty, updateSnippetsInFile)
 
 ## Current Features (Phases 1-6 Complete)
 - File ops: Upload TOML files, create new files, multi-open, sidebar list with select/close, dirty indicator (*)
@@ -19,11 +23,13 @@ This project is a browser-based editor for "pet" CLI snippet TOML files. It allo
 
 ## Implementation Notes
 - Libraries (CDN): @ltd/j-toml@1.38.0, fuse.js@6.6.2
+- Component structure: Modular Web Components in separate files (components/*.js), each self-registering
+- Component isolation: Shadow DOM for style encapsulation, communication via window-exposed functions
 - Color palette for vars: 10 colors, hashed by variable name for consistency
 - Focus preservation: requestAnimationFrame + setSelectionRange for smooth editing
 - Re-rendering: Optimized to only re-render when necessary (e.g., variable count changes)
 - Case handling: TOML parser handles [[Snippets]]/[[snippets]] and Description/description fields
-- Testing: Run locally via file:///path/to/index.html
+- Testing: Run locally via file:///path/to/index.html or local web server
 
 
 # ToDo List
@@ -74,6 +80,13 @@ This project is a browser-based editor for "pet" CLI snippet TOML files. It allo
   - [x] List support: + to add, - to remove values
   - [x] "Make List" button to convert single value
   - [x] Command textarea focus preservation
+
+- [x] Refactoring: Component Extraction
+  - [x] Extracted all Web Components from index.html to separate files
+  - [x] components/file-list.js - File list sidebar component
+  - [x] components/snippet-list.js - Snippet list with filtering
+  - [x] components/snippet-item.js - Individual snippet editor
+  - [x] Exposed main app functions to window for component communication
 
 ## Remaining Phases
 

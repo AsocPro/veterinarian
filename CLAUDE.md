@@ -94,8 +94,11 @@ Follow the phase-specific prompts provided separately. stop after completing a p
 ## Technical Implementation Notes
 
 ### File Structure
-- index.html: Main app with inline Web Components
+- index.html: Main app entry point with global state and file operations
 - styles.css: Shared generic styles
+- components/file-list.js: File list sidebar Web Component
+- components/snippet-list.js: Snippet list with filtering/search Web Component
+- components/snippet-item.js: Individual snippet editor Web Component
 - utils/toml-parser.js: TOML parsing with case-insensitive field handling
 - utils/var-parser.js: Variable extraction, color mapping, command updating
 
@@ -111,6 +114,8 @@ Follow the phase-specific prompts provided separately. stop after completing a p
 - window.updateSnippetsInFile(): Updates snippets and marks dirty
 
 ### Important Patterns
+- Component architecture: Each Web Component is in its own file with class definition and registration
+- Component communication: Components access main app functions via window.* (createNewFile, selectFile, closeFile, markFileDirty, updateSnippetsInFile)
 - Focus preservation: Use requestAnimationFrame + setSelectionRange for inputs
 - Re-rendering optimization: Only re-render when necessary (e.g., variable count changes)
 - Shadow DOM: All Web Components use shadow DOM for encapsulation
