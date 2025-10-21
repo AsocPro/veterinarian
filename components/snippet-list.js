@@ -157,6 +157,7 @@ class SnippetList extends HTMLElement {
           </label>
         </div>
         <div class="control-group">
+          <button class="btn btn-success" id="add-snippet">+ Add Snippet</button>
           <button class="btn btn-primary" id="copy-selected">Copy Selected</button>
           <button class="btn btn-danger" id="delete-selected">Delete Selected</button>
         </div>
@@ -195,6 +196,36 @@ class SnippetList extends HTMLElement {
         this.selectedIndices.clear();
       }
       this.renderUI();
+    });
+
+    this.shadowRoot.getElementById('add-snippet').addEventListener('click', () => {
+      // Create a new empty snippet
+      const newSnippet = {
+        description: '',
+        command: '',
+        tag: [],
+        output: ''
+      };
+
+      // Add to the beginning of the snippets array
+      this.allSnippets.unshift(newSnippet);
+
+      // Update global state
+      window.updateSnippetsInFile(this.allSnippets);
+
+      // Re-render without resetting filters
+      this.render(this.allSnippets, false);
+
+      // Focus on the description field of the new snippet after render
+      requestAnimationFrame(() => {
+        const firstSnippetItem = this.shadowRoot.querySelector('snippet-item');
+        if (firstSnippetItem && firstSnippetItem.shadowRoot) {
+          const descInput = firstSnippetItem.shadowRoot.getElementById('description-input');
+          if (descInput) {
+            descInput.focus();
+          }
+        }
+      });
     });
 
     this.shadowRoot.getElementById('copy-selected').addEventListener('click', () => {

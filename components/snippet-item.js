@@ -24,6 +24,7 @@ class SnippetItem extends HTMLElement {
       this.lastCommand = snippet.command;
     }
     this.variablesExpanded = this.variablesExpanded || false;
+    this.outputExpanded = this.outputExpanded || false;
 
     // Determine highlight class based on selection and zebra
     let highlightClass = '';
@@ -357,8 +358,13 @@ class SnippetItem extends HTMLElement {
             </div>
           </div>
           <div class="snippet-field">
-            <div class="field-label">Output</div>
-            <div class="field-value">
+            <div class="field-label variables-header">
+              <span class="variables-toggle" id="output-toggle">
+                <span class="triangle ${this.outputExpanded ? 'expanded' : ''}">▶</span>
+                Output
+              </span>
+            </div>
+            <div class="variables-section ${this.outputExpanded ? 'expanded' : ''}" id="output-section">
               <textarea class="output-textarea" id="output-input" placeholder="Expected output (optional)">${this.escapeHtml(output)}</textarea>
             </div>
           </div>
@@ -427,10 +433,12 @@ class SnippetItem extends HTMLElement {
       // Attach initial click handlers for variable spans
       this.attachVariableSpanHandlers();
 
-      outputInput.addEventListener('input', (e) => {
-        this.snippet.output = e.target.value;
-        this.onEdit(this.index, 'output', e.target.value);
-      });
+      if (outputInput) {
+        outputInput.addEventListener('input', (e) => {
+          this.snippet.output = e.target.value;
+          this.onEdit(this.index, 'output', e.target.value);
+        });
+      }
     }
 
     // Attach variables section listeners
@@ -540,6 +548,15 @@ class SnippetItem extends HTMLElement {
             }
           });
         });
+      });
+    }
+
+    // Attach output section toggle
+    const outputToggle = this.shadowRoot.getElementById('output-toggle');
+    if (outputToggle) {
+      outputToggle.addEventListener('click', () => {
+        this.outputExpanded = !this.outputExpanded;
+        this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
       });
     }
 
