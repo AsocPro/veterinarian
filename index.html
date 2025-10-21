@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Snippet Editor</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@ltd/j-toml@1.38.0/index.js"></script>
+  <script src="https://unpkg.com/fuse.js@6.6.2/dist/fuse.basic.min.js"></script>
+  <script src="utils/toml-parser.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <file-list></file-list>
+    </aside>
+    <main class="main">
+      <header class="header">
+        <h1 id="file-name-display">Pet Snippet Editor</h1>
+      </header>
+      <div class="snippet-list-container">
+        <snippet-list></snippet-list>
+      </div>
+    </main>
+  </div>
+
+  <input type="file" id="file-input" accept=".toml" style="display: none;" multiple>
+
+  <script type="module">
+    // Global state
+    const appState = {
+      openFiles: [],
+      selectedFileIndex: -1
+    };
+
+    // File operations
+    function handleFileUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const fileObj = {
+            name: file.name,
+            content: e.target.result,
+            parsed: null
+          };
+
+          // Parse TOML
+          try {
+            fileObj.parsed = window.TomlParser.parse(e.target.result);
+          } catch (err) {
+            console.error('Failed to parse TOML:', err);
+            alert(`Failed to parse ${file.name}: ${err.message}`);
+          }
+
+          appState.openFiles.push(fileObj);
+          updateFileList();
+
+          // Auto-select first file if none selected
+          if (appState.selectedFileIndex === -1) {
+            selectFile(appState.openFiles.length - 1);
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // Reset input
+      event.target.value = '';
+    }
+
+    function createNewFile() {
+      let counter = 1;
+      let fileName = 'new.toml';
+
+      // Check for name conflicts
+      while (appState.openFiles.some(f => f.name === fileName)) {
+        fileName = `new-${counter}.toml`;
+        counter++;
+      }
+
+      const content = '[[snippets]]\n';
+      const fileObj = {
+        name: fileName,
+        content: content,
+        parsed: null
+      };
+
+      // Parse TOML
+      try {
+        fileObj.parsed = window.TomlParser.parse(content);
+      } catch (err) {
+        console.error('Failed to parse TOML:', err);
+      }
+
+      appState.openFiles.push(fileObj);
+      updateFileList();
+      selectFile(appState.openFiles.length - 1);
+    }
+
+    function selectFile(index) {
+      appState.selectedFileIndex = index;
+      updateFileList();
+      updateHeader();
+      updateSnippetList();
+    }
+
+    function closeFile(index) {
+      appState.openFiles.splice(index, 1);
+
+      // Adjust selected index
+      if (appState.selectedFileIndex >= appState.openFiles.length) {
+        appState.selectedFileIndex = appState.openFiles.length - 1;
+      }
+
+      updateFileList();
+      updateHeader();
+      updateSnippetList();
+    }
+
+    function updateFileList() {
+      const fileListElement = document.querySelector('file-list');
+      if (fileListElement) {
+        fileListElement.render(appState.openFiles, appState.selectedFileIndex);
+      }
+    }
+
+    function updateHeader() {
+      const headerElement = document.getElementById('file-name-display');
+      if (appState.selectedFileIndex >= 0 && appState.selectedFileIndex < appState.openFiles.length) {
+        headerElement.textContent = appState.openFiles[appState.selectedFileIndex].name;
+      } else {
+        headerElement.textContent = 'Pet Snippet Editor';
+      }
+    }
+
+    function updateSnippetList() {
+      const snippetListElement = document.querySelector('snippet-list');
+      if (snippetListElement) {
+        const file = appState.selectedFileIndex >= 0 ? appState.openFiles[appState.selectedFileIndex] : null;
+        const snippets = file?.parsed?.snippets || [];
+        snippetListElement.render(snippets);
+      }
+    }
+
+    // File List Component
+    class FileList extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+      }
+
+      connectedCallback() {
+        this.render([], -1);
+      }
+
+      render(files, selectedIndex) {
+        this.shadowRoot.innerHTML = `
+          <link rel="stylesheet" href="styles.css">
+          <style>
+            :host {
+              display: block;
+            }
+            .file-controls {
+              padding: 1rem;
+              border-bottom: 1px solid #ddd;
+              display: flex;
+              flex-direction: column;
+              gap: 0.5rem;
+            }
+            .file-list {
+              padding: 0.5rem;
+            }
+            .file-item {
+              padding: 0.75rem;
+              border-bottom: 1px solid #eee;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .file-item.selected {
+              background-color: #e3f2fd;
+              border-left: 3px solid #2196f3;
+              padding-left: calc(0.75rem - 3px);
+            }
+            .file-name {
+              flex: 1;
+              font-size: 13px;
+              word-break: break-word;
+            }
+            .file-actions {
+              display: flex;
+              gap: 0.25rem;
+            }
+          </style>
+          <div class="file-controls">
+            <button class="btn btn-primary" id="upload-btn">Upload TOML</button>
+            <button class="btn" id="new-btn">New File</button>
+          </div>
+          <div class="file-list">
+            ${files.length === 0 ? '<div style="padding: 1rem; color: #999; font-size: 13px;">No files open</div>' : ''}
+            ${files.map((file, index) => `
+              <div class="file-item ${index === selectedIndex ? 'selected' : ''}">
+                <div class="file-name">${this.escapeHtml(file.name)}</div>
+                <div class="file-actions">
+                  ${index !== selectedIndex ? `<button class="btn btn-small" data-select="${index}">Select</button>` : ''}
+                  <button class="btn btn-small btn-danger" data-close="${index}">Close</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        // Attach event listeners
+        this.shadowRoot.getElementById('upload-btn').addEventListener('click', () => {
+          document.getElementById('file-input').click();
+        });
+
+        this.shadowRoot.getElementById('new-btn').addEventListener('click', createNewFile);
+
+        this.shadowRoot.querySelectorAll('[data-select]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.select);
+            selectFile(index);
+          });
+        });
+
+        this.shadowRoot.querySelectorAll('[data-close]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.close);
+            closeFile(index);
+          });
+        });
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    // Snippet List Component
+    class SnippetList extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.allSnippets = [];
+        this.filteredSnippets = [];
+        this.selectedIndices = new Set();
+        this.searchQuery = '';
+        this.selectedTags = new Set();
+        this.tagMatchMode = 'any'; // 'any' or 'all'
+        this.fuse = null;
+      }
+
+      connectedCallback() {
+        this.render([]);
+      }
+
+      render(snippets) {
+        this.allSnippets = snippets;
+        this.applyFilters();
+        this.renderUI();
+      }
+
+      applyFilters() {
+        let filtered = [...this.allSnippets];
+
+        // Apply tag filter
+        if (this.selectedTags.size > 0) {
+          filtered = filtered.filter(snippet => {
+            const snippetTags = snippet.tag || [];
+            if (this.tagMatchMode === 'all') {
+              return Array.from(this.selectedTags).every(tag => snippetTags.includes(tag));
+            } else {
+              return Array.from(this.selectedTags).some(tag => snippetTags.includes(tag));
+            }
+          });
+        }
+
+        // Apply search filter
+        if (this.searchQuery.trim()) {
+          if (!this.fuse) {
+            this.fuse = new Fuse(filtered, {
+              keys: ['description', 'command'],
+              threshold: 0.3,
+              includeScore: true
+            });
+          } else {
+            this.fuse.setCollection(filtered);
+          }
+          const results = this.fuse.search(this.searchQuery);
+          filtered = results.map(r => r.item);
+        }
+
+        this.filteredSnippets = filtered;
+      }
+
+      renderUI() {
+        const allTags = this.getAllTags();
+        const allSelected = this.filteredSnippets.length > 0 &&
+                           this.filteredSnippets.every((_, i) => this.selectedIndices.has(i));
+
+        this.shadowRoot.innerHTML = `
+          <link rel="stylesheet" href="styles.css">
+          <style>
+            :host {
+              display: block;
+            }
+            .controls-header {
+              background-color: #fff;
+              border-bottom: 2px solid #ddd;
+              padding: 1rem 1.5rem;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 1rem;
+              align-items: center;
+              position: sticky;
+              top: 0;
+              z-index: 10;
+            }
+            .control-group {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .control-group label {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              font-size: 14px;
+              cursor: pointer;
+            }
+            .search-input {
+              padding: 0.5rem;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+              font-size: 14px;
+              min-width: 250px;
+            }
+            .tag-filter {
+              position: relative;
+            }
+            .tag-dropdown {
+              position: absolute;
+              top: 100%;
+              left: 0;
+              background: #fff;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              max-height: 300px;
+              overflow-y: auto;
+              min-width: 200px;
+              z-index: 100;
+              display: none;
+            }
+            .tag-dropdown.open {
+              display: block;
+            }
+            .tag-option {
+              padding: 0.5rem 1rem;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .tag-option:hover {
+              background-color: #f5f5f5;
+            }
+            .tag-option input {
+              cursor: pointer;
+            }
+            .snippet-list {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 1rem;
+            }
+            .empty-state {
+              text-align: center;
+              padding: 3rem 1rem;
+              color: #999;
+            }
+          </style>
+          <div class="controls-header">
+            <div class="control-group">
+              <label>
+                <input type="checkbox" id="select-all" ${allSelected ? 'checked' : ''}>
+                <span>Select All</span>
+              </label>
+            </div>
+            <div class="control-group">
+              <button class="btn btn-primary" id="copy-selected">Copy Selected</button>
+              <button class="btn btn-danger" id="delete-selected">Delete Selected</button>
+            </div>
+            <div class="control-group tag-filter">
+              <button class="btn" id="tag-filter-btn">Tags (${this.selectedTags.size})</button>
+              <button class="btn btn-small" id="tag-mode-toggle">${this.tagMatchMode === 'all' ? 'All' : 'Any'}</button>
+              <div class="tag-dropdown" id="tag-dropdown">
+                ${allTags.length === 0 ? '<div style="padding: 1rem; color: #999;">No tags available</div>' : ''}
+                ${allTags.map(tag => `
+                  <label class="tag-option">
+                    <input type="checkbox" value="${this.escapeHtml(tag)}" ${this.selectedTags.has(tag) ? 'checked' : ''}>
+                    <span>${this.escapeHtml(tag)}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+            <div class="control-group">
+              <input type="text" class="search-input" id="search-input" placeholder="Search snippets..." value="${this.escapeHtml(this.searchQuery)}">
+            </div>
+          </div>
+          <div class="snippet-list">
+            ${this.filteredSnippets.length === 0 ?
+              '<div class="empty-state">' + (this.allSnippets.length === 0 ? 'No snippets in this file' : 'No snippets match the current filters') + '</div>' :
+              this.filteredSnippets.map((snippet, index) => `
+                <snippet-item data-index="${index}"></snippet-item>
+              `).join('')
+            }
+          </div>
+        `;
+
+        // Attach event listeners
+        this.shadowRoot.getElementById('select-all').addEventListener('change', (e) => {
+          if (e.target.checked) {
+            this.filteredSnippets.forEach((_, i) => this.selectedIndices.add(i));
+          } else {
+            this.selectedIndices.clear();
+          }
+          this.renderUI();
+        });
+
+        this.shadowRoot.getElementById('copy-selected').addEventListener('click', () => {
+          console.log('Copy selected clicked (stub)');
+          alert('Copy selected functionality will be implemented in a later phase');
+        });
+
+        this.shadowRoot.getElementById('delete-selected').addEventListener('click', () => {
+          console.log('Delete selected clicked (stub)');
+          alert('Delete selected functionality will be implemented in a later phase');
+        });
+
+        const tagFilterBtn = this.shadowRoot.getElementById('tag-filter-btn');
+        const tagDropdown = this.shadowRoot.getElementById('tag-dropdown');
+
+        tagFilterBtn.addEventListener('click', () => {
+          tagDropdown.classList.toggle('open');
+        });
+
+        // Close dropdown when clicking outside
+        this.shadowRoot.addEventListener('click', (e) => {
+          if (!e.target.closest('.tag-filter')) {
+            tagDropdown.classList.remove('open');
+          }
+        });
+
+        this.shadowRoot.getElementById('tag-mode-toggle').addEventListener('click', () => {
+          this.tagMatchMode = this.tagMatchMode === 'all' ? 'any' : 'all';
+          this.applyFilters();
+          this.renderUI();
+        });
+
+        tagDropdown.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const tag = e.target.value;
+            if (e.target.checked) {
+              this.selectedTags.add(tag);
+            } else {
+              this.selectedTags.delete(tag);
+            }
+            this.applyFilters();
+            this.renderUI();
+          });
+        });
+
+        const searchInput = this.shadowRoot.getElementById('search-input');
+        searchInput.addEventListener('input', (e) => {
+          this.searchQuery = e.target.value;
+          this.fuse = null; // Reset fuse instance
+          this.applyFilters();
+          this.renderUI();
+          // Restore focus to search input after re-render
+          requestAnimationFrame(() => {
+            const newSearchInput = this.shadowRoot.getElementById('search-input');
+            if (newSearchInput) {
+              newSearchInput.focus();
+              // Restore cursor position
+              newSearchInput.setSelectionRange(this.searchQuery.length, this.searchQuery.length);
+            }
+          });
+        });
+
+        // Render snippet items
+        const snippetItems = this.shadowRoot.querySelectorAll('snippet-item');
+        snippetItems.forEach((item, index) => {
+          const isSelected = this.selectedIndices.has(index);
+          item.render(this.filteredSnippets[index], index, isSelected, (idx, checked) => {
+            if (checked) {
+              this.selectedIndices.add(idx);
+            } else {
+              this.selectedIndices.delete(idx);
+            }
+            this.renderUI();
+          });
+        });
+      }
+
+      getAllTags() {
+        const tagSet = new Set();
+        this.allSnippets.forEach(snippet => {
+          (snippet.tag || []).forEach(tag => tagSet.add(tag));
+        });
+        return Array.from(tagSet).sort();
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    // Snippet Item Component
+    class SnippetItem extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+      }
+
+      render(snippet, index, isSelected = false, onCheckChange = null) {
+        this.onCheckChange = onCheckChange;
+        this.index = index;
+
+        const isEven = index % 2 === 0;
+        const tags = snippet.tag || [];
+        const output = snippet.output || '';
+
+        this.shadowRoot.innerHTML = `
+          <link rel="stylesheet" href="styles.css">
+          <style>
+            :host {
+              display: block;
+              margin-bottom: 1rem;
+            }
+            .snippet-container {
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              overflow: hidden;
+              transition: all 0.2s ease;
+            }
+            .snippet-container.selected {
+              border-color: #2196f3;
+              box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+            }
+            .snippet-header {
+              padding: 0.75rem 1rem;
+              font-weight: 600;
+              font-size: 14px;
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+            }
+            .snippet-header input[type="checkbox"] {
+              cursor: pointer;
+            }
+            .snippet-title {
+              flex: 1;
+            }
+            .snippet-body {
+              padding: 1rem;
+              background-color: #fff;
+            }
+            .snippet-field {
+              margin-bottom: 1rem;
+            }
+            .snippet-field:last-child {
+              margin-bottom: 0;
+            }
+            .field-label {
+              font-size: 12px;
+              font-weight: 600;
+              color: #666;
+              margin-bottom: 0.25rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .field-value pre {
+              background-color: #f5f5f5;
+              padding: 0.75rem;
+              border-radius: 4px;
+              overflow-x: auto;
+              margin: 0;
+              font-family: 'Courier New', monospace;
+              font-size: 13px;
+              line-height: 1.5;
+            }
+            .field-value ul {
+              list-style: none;
+              padding: 0;
+              margin: 0;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.5rem;
+            }
+            .field-value li {
+              background-color: #e3f2fd;
+              color: #1976d2;
+              padding: 0.25rem 0.75rem;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: 500;
+            }
+          </style>
+          <div class="snippet-container ${isSelected ? 'selected' : ''}">
+            <div class="snippet-header ${isEven ? 'zebra-even' : 'zebra-odd'}">
+              <input type="checkbox" id="snippet-checkbox" ${isSelected ? 'checked' : ''}>
+              <span class="snippet-title">${this.escapeHtml(snippet.description || 'Untitled Snippet')}</span>
+            </div>
+            <div class="snippet-body">
+              <div class="snippet-field">
+                <div class="field-label">Command</div>
+                <div class="field-value">
+                  <pre>${this.escapeHtml(snippet.command || '')}</pre>
+                </div>
+              </div>
+              ${tags.length > 0 ? `
+                <div class="snippet-field">
+                  <div class="field-label">Tags</div>
+                  <div class="field-value">
+                    <ul>
+                      ${tags.map(tag => `<li>${this.escapeHtml(tag)}</li>`).join('')}
+                    </ul>
+                  </div>
+                </div>
+              ` : ''}
+              ${output ? `
+                <div class="snippet-field">
+                  <div class="field-label">Output</div>
+                  <div class="field-value">
+                    <pre>${this.escapeHtml(output)}</pre>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+
+        // Attach checkbox listener
+        if (this.onCheckChange) {
+          this.shadowRoot.getElementById('snippet-checkbox').addEventListener('change', (e) => {
+            this.onCheckChange(this.index, e.target.checked);
+          });
+        }
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    }
+
+    // Register components
+    customElements.define('file-list', FileList);
+    customElements.define('snippet-list', SnippetList);
+    customElements.define('snippet-item', SnippetItem);
+
+    // Setup file input listener
+    document.getElementById('file-input').addEventListener('change', handleFileUpload);
+  </script>
+</body>
+</html>

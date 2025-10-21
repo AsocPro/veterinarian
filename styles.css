@@ -1,0 +1,129 @@
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f5f5f5;
+}
+
+/* Layout */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.snippet-list-container {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #fafafa;
+}
+
+/* Zebra striping */
+.zebra-even {
+  background-color: #f9f9f9;
+}
+
+.zebra-odd {
+  background-color: #ffffff;
+}
+
+/* Highlight colors */
+.highlight-blue1 {
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+
+.highlight-blue2 {
+  background-color: #bbdefb;
+  border-left: 3px solid #1976d2;
+}
+
+/* Button styles */
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
+
+.btn:active {
+  background-color: #e0e0e0;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #2196f3;
+  color: #fff;
+  border-color: #2196f3;
+}
+
+.btn-primary:hover {
+  background-color: #1976d2;
+  border-color: #1976d2;
+}
+
+.btn-danger {
+  background-color: #f44336;
+  color: #fff;
+  border-color: #f44336;
+}
+
+.btn-danger:hover {
+  background-color: #d32f2f;
+  border-color: #d32f2f;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 12px;
+}
