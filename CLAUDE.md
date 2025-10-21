@@ -34,13 +34,17 @@ Implement one phase at a time. Each phase prompt will provide the current code s
 
 For each phase response, list changed/added files with their full content in markdown code blocks. Do not explain unless asked; focus on code.
 
+### Testing
+
+Do not create standalone test HTML files. The user tests functionality directly in the main application (index.html). Focus on implementation and documentation instead.
+
 
 # Process and manual testing
 Follow the phase-specific prompts provided separately. stop after completing a phase to allow for manual testing.
 
 # Current Implementation Status
 
-## Completed Features (Phases 1-6)
+## Completed Features (Phases 1-7)
 
 ### Phase 1: Basic Structure ✓
 - HTML layout with sidebar and main sections
@@ -90,6 +94,18 @@ Follow the phase-specific prompts provided separately. stop after completing a p
 - "Make List" button to convert single value to list
 - Command textarea maintains focus while typing
 - Re-parses variables on command changes
+
+### Phase 7: Command Reconstruction ✓
+- On variable value/list edits, command is automatically reconstructed
+- First occurrence of each variable updated with new syntax
+- Subsequent occurrences remain as `<var>` (plain variable)
+- Blank values: `<var>` (default removed)
+- Single values: `<var=value>` (default added)
+- List values: `<var=|_val1_||_val2_|>` (list format)
+- Empty list values automatically filtered out
+- Command textarea updates in real-time
+- Handles default value removal/addition seamlessly
+- Maintains idempotency (parse → update → parse produces same result)
 
 ## Technical Implementation Notes
 

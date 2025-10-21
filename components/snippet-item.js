@@ -17,8 +17,12 @@ class SnippetItem extends HTMLElement {
     const tags = snippet.tag || [];
     const output = snippet.output || '';
 
-    // Parse variables from command
-    this.variables = window.VarParser.parseVariables(snippet.command || '');
+    // Parse variables from command (preserve existing structure if re-rendering)
+    // This prevents losing isList state when command doesn't change
+    if (!this.variables || this.lastCommand !== snippet.command) {
+      this.variables = window.VarParser.parseVariables(snippet.command || '');
+      this.lastCommand = snippet.command;
+    }
     this.variablesExpanded = this.variablesExpanded || false;
 
     // Determine highlight class based on selection and zebra
@@ -354,6 +358,7 @@ class SnippetItem extends HTMLElement {
         // Re-parse variables when command changes but don't re-render unless count changed
         const oldVarCount = this.variables.length;
         this.variables = window.VarParser.parseVariables(e.target.value);
+        this.lastCommand = e.target.value; // Update lastCommand to prevent re-parsing on next render
         if (this.variables.length !== oldVarCount) {
           // Re-render when variable count changes to update the variables section
           const cursorPos = e.target.selectionStart;
@@ -410,8 +415,23 @@ class SnippetItem extends HTMLElement {
       this.shadowRoot.querySelectorAll('[data-add-val]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const varIdx = parseInt(e.target.dataset.addVal);
+          const newValIdx = this.variables[varIdx].listValues.length; // Index of the new field
           this.variables[varIdx].listValues.push('');
+          // Update command with new list structure
+          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+          this.lastCommand = this.snippet.command;
+          if (this.onEdit) {
+            this.onEdit(this.index, 'command', this.snippet.command);
+          }
           this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+
+          // Focus the newly added input field
+          requestAnimationFrame(() => {
+            const newInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="${newValIdx}"]`);
+            if (newInput) {
+              newInput.focus();
+            }
+          });
         });
       });
 
@@ -420,16 +440,25 @@ class SnippetItem extends HTMLElement {
         btn.addEventListener('click', (e) => {
           const [varIdx, valIdx] = e.target.dataset.removeVal.split('-').map(Number);
           const varObj = this.variables[varIdx];
-          if (varObj.listValues.length > 1) {
+
+          if (varObj.listValues.length === 1) {
+            // Last item: convert back to single value and clear it
+            varObj.isList = false;
+            varObj.value = '';
+            varObj.listValues = [''];
+          } else if (varObj.listValues.length > 1) {
+            // Multiple items: just remove this one
             varObj.listValues.splice(valIdx, 1);
-            // Update command
-            this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-            cmdInput.value = this.snippet.command;
-            if (this.onEdit) {
-              this.onEdit(this.index, 'command', this.snippet.command);
-            }
-            this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
           }
+
+          // Update command
+          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+          this.lastCommand = this.snippet.command;
+          cmdInput.value = this.snippet.command;
+          if (this.onEdit) {
+            this.onEdit(this.index, 'command', this.snippet.command);
+          }
+          this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
         });
       });
 
@@ -443,11 +472,20 @@ class SnippetItem extends HTMLElement {
           varObj.value = '';
           // Update command
           this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+          this.lastCommand = this.snippet.command;
           cmdInput.value = this.snippet.command;
           if (this.onEdit) {
             this.onEdit(this.index, 'command', this.snippet.command);
           }
           this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+
+          // Focus the second field (the empty one) after converting to list
+          requestAnimationFrame(() => {
+            const secondInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="1"]`);
+            if (secondInput) {
+              secondInput.focus();
+            }
+          });
         });
       });
     }

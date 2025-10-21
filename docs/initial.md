@@ -88,26 +88,37 @@ This project is a browser-based editor for "pet" CLI snippet TOML files. It allo
   - [x] components/snippet-item.js - Individual snippet editor
   - [x] Exposed main app functions to window for component communication
 
+- [x] Phase 7: Command Reconstruction on Variable Edits
+  - [x] Automatic command reconstruction when variable values change
+  - [x] First occurrence updated with new syntax (<var=value> or <var=|_list_|>)
+  - [x] Subsequent occurrences remain as plain <var>
+  - [x] Blank values produce <var> (default removal)
+  - [x] Single values produce <var=value>
+  - [x] List values produce <var=|_val1_||_val2_|>
+  - [x] Empty list items filtered automatically
+  - [x] Real-time command textarea updates
+  - [x] Idempotent parse/update cycle
+
 ## Remaining Phases
 
-- [ ] Phase 7: Download and Save
+- [ ] Phase 8: Download and Save
   - [ ] Download button to save current file as TOML
   - [ ] Use TomlParser.stringify to convert parsed object back to TOML
   - [ ] Clear dirty flag after save
 
-- [ ] Phase 8: Advanced Interactions
+- [ ] Phase 9: Advanced Interactions
   - [ ] Clicking variable in command selects it in variables section
   - [ ] Implement copy selected snippets functionality
   - [ ] Implement delete selected snippets functionality
   - [ ] Copy snippets to another open file (with file picker)
 
-- [ ] Phase 9: Polish and UX Improvements
+- [ ] Phase 10: Polish and UX Improvements
   - [ ] Add keyboard shortcuts (Ctrl+S for save, etc.)
   - [ ] Improve error handling and user feedback
   - [ ] Add confirmation dialogs for destructive actions
   - [ ] Performance optimizations for large files
 
-- [ ] Phase 10: Final Testing and Refinements
+- [ ] Phase 11: Final Testing and Refinements
   - [ ] Test with various TOML files
   - [ ] Test variable edge cases
   - [ ] Cross-browser testing
