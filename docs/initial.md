@@ -3,69 +3,101 @@
 This project is a browser-based editor for "pet" CLI snippet TOML files. It allows users to upload, create, edit, and download snippet files locally. The app uses Web Components for UI modularity, runs without a server, and features a sidebar for file management and a main pane for snippet editing with advanced features like variable highlighting and editing.
 
 ## High-Level Architecture
-- index.html: Entry point, loads shared CSS, registers Web Components, sets up layout (sidebar, main).
-- styles.css: Shared generic styles (layout, zebra, highlights, buttons).
-- components/: JS files for Web Components (e.g., file-list.js, snippet-list.js, snippet-item.js).
-- utils/: JS helpers (e.g., toml-parser.js for parsing/stringifying TOML, fuzzy-search.js).
-- Data Model: In-memory array of open files, each with {name, content (parsed TOML as JS object), dirty flag}.
-- Features Breakdown:
-  - File ops: Upload, new, download, multi-open, sidebar list with select/close.
-  - Snippet list: Zebra-striped, checkboxes, editable fields, var highlighting/click-to-select.
-  - Header: Select all, copy/delete selected, tag filter (multi-select, all/any), fuzzy search.
-  - Variables: Collapsed section per snippet, unique vars with colors, editable values/lists (+/-), sync to command.
+- index.html: Entry point with inline Web Components (file-list, snippet-list, snippet-item)
+- styles.css: Shared generic styles (layout, zebra, highlights, buttons)
+- utils/toml-parser.js: TOML parsing/stringifying with case-insensitive field handling
+- utils/var-parser.js: Variable extraction, color mapping, and command updating
+- Data Model: In-memory array of open files, each with {name, content (string), parsed (object), dirty (boolean)}
+
+## Current Features (Phases 1-6 Complete)
+- File ops: Upload TOML files, create new files, multi-open, sidebar list with select/close, dirty indicator (*)
+- Snippet display: Zebra-striped cards with editable description, command, tags, output
+- Header controls: Select all checkbox, copy/delete selected (stubs), tag filter dropdown (all/any), fuzzy search
+- Tag management: Always visible, add/remove tags with +/× buttons, auto-updates tag filter dropdown
+- Variables: Collapsible section (always visible), color-coded variables, editable values, list support with +/-, real-time command sync
+- Filtering: Tag filtering (all/any mode), fuzzy search on description/command, filters reset on file switch
 
 ## Implementation Notes
-- Use @ltd/j-toml for TOML (CDN: https://unpkg.com/@ltd/j-toml).
-
-- Color palette for vars: Cycle through 5-10 colors (e.g., blues, greens).
-
-- No mocking: Each phase builds real, testable functionality.
-
-- Testing: Run locally via file:///path/to/index.html; test file ops with browser permissions.
+- Libraries (CDN): @ltd/j-toml@1.38.0, fuse.js@6.6.2
+- Color palette for vars: 10 colors, hashed by variable name for consistency
+- Focus preservation: requestAnimationFrame + setSelectionRange for smooth editing
+- Re-rendering: Optimized to only re-render when necessary (e.g., variable count changes)
+- Case handling: TOML parser handles [[Snippets]]/[[snippets]] and Description/description fields
+- Testing: Run locally via file:///path/to/index.html
 
 
 # ToDo List
-- [ ] Phase 1: Basic Structure and LayoutCreate index.html with sidebar and main sections.
-  - [ ] Add shared styles.css for basic layout and generic classes.
-  - [ ] Register placeholder Web Components for sidebar and main.
 
-- [ ] Phase 2: File HandlingImplement upload button to load TOML files.
-  - [ ] Support creating new empty TOML file.
-  - [ ] List open files in sidebar with select and close buttons.
-  - [ ] Track selected file; update main pane header with file name.
+## Completed Phases
+- [x] Phase 1: Basic Structure and Layout
+  - [x] index.html with sidebar and main sections
+  - [x] shared styles.css for basic layout and generic classes
+  - [x] Placeholder Web Components registered
 
-- [ ] Phase 3: TOML Parsing and Snippet DisplayAdd TOML parser utility.
-  - [ ] For selected file, parse TOML and display snippet list in main pane.
-  - [ ] Each snippet as a Web Component with basic fields (desc, cmd, tags, output).
+- [x] Phase 2: File Handling
+  - [x] Upload button to load TOML files (multiple file support)
+  - [x] Create new empty TOML file with [[snippets]] template
+  - [x] List open files in sidebar with select and close buttons
+  - [x] Track selected file; display file name in header
+  - [x] Dirty indicator (*) for modified files
 
-- [ ] Phase 4: Header ControlsAdd header with select-all checkbox, copy selected button, delete selected button.
-  - [ ] Implement tag multi-select dropdown with all/any toggle.
-  - [ ] Add fuzzy search input for desc/cmd.
+- [x] Phase 3: TOML Parsing and Snippet Display
+  - [x] utils/toml-parser.js with case-insensitive parsing
+  - [x] Parse and display snippet list in main pane
+  - [x] snippet-item component with desc, cmd, tags, output fields
+  - [x] Zebra striping applied
 
-- [ ] Phase 5: Snippet Editing BasicsMake description and command editable (input/textarea).
-  - [ ] Add checkboxes per snippet; highlight selected with blue tones.
-  - [ ] Implement per-snippet copy and delete buttons.
+- [x] Phase 4: Header Controls
+  - [x] Select-all checkbox with working toggle
+  - [x] Copy selected button (stub)
+  - [x] Delete selected button (stub)
+  - [x] Tag multi-select dropdown with all/any toggle
+  - [x] Fuzzy search input with fuse.js
+  - [x] Filters reset when switching files
 
-- [ ] Phase 6: Variable Highlighting and SectionParse variables from command; highlight in command with colors (same color per var name).
-  - [ ] Add collapsed variables section with dropdown toggle.
-  - [ ] List unique vars with name, value(s), colors; + to add list item, - to remove.
+- [x] Phase 5: Snippet Editing Basics
+  - [x] Editable description (input)
+  - [x] Editable command (textarea with focus preservation)
+  - [x] Editable output (textarea, always visible)
+  - [x] Per-snippet checkboxes with selection highlighting
+  - [x] Per-snippet copy button (stub)
+  - [x] Per-snippet delete button (working with confirmation)
+  - [x] Tag management: always visible, add/remove with +/×
+  - [x] Tags auto-update filter dropdown
 
-- [ ] Phase 7: Variable Editing SyncWhen editing var values/lists, update command (defaults on first instance only).
-  - [ ] Handle list format <var=|_val1_||_val2_|>.
-  - [ ] If single blank value, revert to <var>.
+- [x] Phase 6: Variable Management
+  - [x] utils/var-parser.js for variable extraction and color mapping
+  - [x] Parse variables from command: <var>, <var=value>, <var=|_val1_||_val2_|>
+  - [x] Collapsible variables section (always visible)
+  - [x] List unique vars with color-coded backgrounds
+  - [x] Editable value inputs with real-time command sync
+  - [x] List support: + to add, - to remove values
+  - [x] "Make List" button to convert single value
+  - [x] Command textarea focus preservation
 
-- [ ] Phase 8: Advanced InteractionsClicking var in command selects it in variables section (open if closed).
-  - [ ] Implement copy selected/all to another open file (prompt for target file).
-  - [ ] Filtering: Apply tag and search filters to snippet list.
+## Remaining Phases
 
-- [ ] Phase 9: Download and PolishAdd download button for selected file (stringify TOML).
-  - [ ] Handle multi-file copy/delete logic.
-  - [ ] Add zebra striping, ensure styles are shared.
+- [ ] Phase 7: Download and Save
+  - [ ] Download button to save current file as TOML
+  - [ ] Use TomlParser.stringify to convert parsed object back to TOML
+  - [ ] Clear dirty flag after save
 
-- [ ] Phase 10
-  - [ ] Final Testing and RefinementsTest all features with sample TOML.
-  - [ ] Fix bugs, improve UX.
+- [ ] Phase 8: Advanced Interactions
+  - [ ] Clicking variable in command selects it in variables section
+  - [ ] Implement copy selected snippets functionality
+  - [ ] Implement delete selected snippets functionality
+  - [ ] Copy snippets to another open file (with file picker)
 
-Check off as phases are completed.
+- [ ] Phase 9: Polish and UX Improvements
+  - [ ] Add keyboard shortcuts (Ctrl+S for save, etc.)
+  - [ ] Improve error handling and user feedback
+  - [ ] Add confirmation dialogs for destructive actions
+  - [ ] Performance optimizations for large files
+
+- [ ] Phase 10: Final Testing and Refinements
+  - [ ] Test with various TOML files
+  - [ ] Test variable edge cases
+  - [ ] Cross-browser testing
+  - [ ] Fix any remaining bugs
 
 
