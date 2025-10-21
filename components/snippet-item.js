@@ -109,6 +109,33 @@ class SnippetItem extends HTMLElement {
           border-color: #2196f3;
           background-color: #fff;
         }
+        .command-editor {
+          width: 100%;
+          min-height: 80px;
+          background-color: #f5f5f5;
+          padding: 0.75rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-family: 'Courier New', monospace;
+          font-size: 13px;
+          line-height: 1.5;
+          overflow-wrap: break-word;
+          white-space: pre-wrap;
+        }
+        .command-editor:focus {
+          outline: none;
+          border-color: #2196f3;
+          background-color: #fff;
+        }
+        .command-editor:empty:before {
+          content: attr(data-placeholder);
+          color: #999;
+        }
+        .var-highlight {
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-weight: 600;
+        }
         .field-value ul {
           list-style: none;
           padding: 0;
@@ -264,7 +291,7 @@ class SnippetItem extends HTMLElement {
           <div class="snippet-field">
             <div class="field-label">Command</div>
             <div class="field-value">
-              <textarea id="command-input">${this.escapeHtml(snippet.command || '')}</textarea>
+              <div class="command-editor" id="command-input" contenteditable="true" data-placeholder="Enter command">${this.renderHighlightedCommand(snippet.command || '')}</div>
             </div>
           </div>
           <div class="snippet-field">
@@ -353,22 +380,37 @@ class SnippetItem extends HTMLElement {
       });
 
       cmdInput.addEventListener('input', (e) => {
-        this.snippet.command = e.target.value;
-        this.onEdit(this.index, 'command', e.target.value);
+        // Get plain text from contenteditable
+        const plainText = e.target.innerText || '';
+        this.snippet.command = plainText;
+        this.onEdit(this.index, 'command', plainText);
+
+        // Save cursor position BEFORE any DOM changes
+        const cursorOffset = this.getCursorOffsetSimple(e.target);
+
         // Re-parse variables when command changes but don't re-render unless count changed
         const oldVarCount = this.variables.length;
-        this.variables = window.VarParser.parseVariables(e.target.value);
-        this.lastCommand = e.target.value; // Update lastCommand to prevent re-parsing on next render
+        this.variables = window.VarParser.parseVariables(plainText);
+        this.lastCommand = plainText;
+
+        // Always update highlighting
+        const newHTML = this.renderHighlightedCommand(plainText);
+        if (e.target.innerHTML !== newHTML) {
+          e.target.innerHTML = newHTML;
+
+          // Restore cursor position after DOM update
+          this.setCursorOffsetSimple(e.target, cursorOffset);
+        }
+
         if (this.variables.length !== oldVarCount) {
           // Re-render when variable count changes to update the variables section
-          const cursorPos = e.target.selectionStart;
           requestAnimationFrame(() => {
             this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
             // Restore focus to command input
             const newCmdInput = this.shadowRoot.getElementById('command-input');
             if (newCmdInput) {
               newCmdInput.focus();
-              newCmdInput.setSelectionRange(cursorPos, cursorPos);
+              this.setCursorOffsetSimple(newCmdInput, cursorOffset);
             }
           });
         }
@@ -403,7 +445,7 @@ class SnippetItem extends HTMLElement {
 
           // Update command with new values
           this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-          cmdInput.value = this.snippet.command;
+          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
 
           if (this.onEdit) {
             this.onEdit(this.index, 'command', this.snippet.command);
@@ -454,7 +496,7 @@ class SnippetItem extends HTMLElement {
           // Update command
           this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
           this.lastCommand = this.snippet.command;
-          cmdInput.value = this.snippet.command;
+          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
           if (this.onEdit) {
             this.onEdit(this.index, 'command', this.snippet.command);
           }
@@ -473,7 +515,7 @@ class SnippetItem extends HTMLElement {
           // Update command
           this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
           this.lastCommand = this.snippet.command;
-          cmdInput.value = this.snippet.command;
+          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
           if (this.onEdit) {
             this.onEdit(this.index, 'command', this.snippet.command);
           }
@@ -560,6 +602,90 @@ class SnippetItem extends HTMLElement {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Render command with highlighted variables
+   */
+  renderHighlightedCommand(command) {
+    if (!command) return '';
+
+    const positions = window.VarParser.getVariablePositions(command);
+    if (positions.length === 0) {
+      return this.escapeHtml(command);
+    }
+
+    let result = '';
+    let lastEnd = 0;
+
+    positions.forEach(pos => {
+      // Add text before variable
+      if (pos.start > lastEnd) {
+        result += this.escapeHtml(command.substring(lastEnd, pos.start));
+      }
+
+      // Add highlighted variable
+      result += `<span class="var-highlight" style="background-color: ${pos.color}20; color: ${pos.color}; border: 1px solid ${pos.color}40;">${this.escapeHtml(pos.fullText)}</span>`;
+
+      lastEnd = pos.end;
+    });
+
+    // Add remaining text
+    if (lastEnd < command.length) {
+      result += this.escapeHtml(command.substring(lastEnd));
+    }
+
+    return result;
+  }
+
+  /**
+   * Get cursor offset in contenteditable element (simple version using text content)
+   */
+  getCursorOffsetSimple(element) {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return 0;
+
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+
+    return preCaretRange.toString().length;
+  }
+
+  /**
+   * Set cursor offset in contenteditable element (simple version using text content)
+   */
+  setCursorOffsetSimple(element, offset) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+
+    let charCount = 0;
+    let nodeStack = [element];
+    let node;
+    let foundStart = false;
+
+    while (!foundStart && (node = nodeStack.pop())) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const nextCharCount = charCount + node.length;
+        if (offset <= nextCharCount) {
+          range.setStart(node, offset - charCount);
+          range.collapse(true);
+          foundStart = true;
+        }
+        charCount = nextCharCount;
+      } else {
+        // Push child nodes in reverse order to process them in correct order
+        for (let i = node.childNodes.length - 1; i >= 0; i--) {
+          nodeStack.push(node.childNodes[i]);
+        }
+      }
+    }
+
+    if (foundStart) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
   }
 }
 
