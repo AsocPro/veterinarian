@@ -135,6 +135,11 @@ class SnippetItem extends HTMLElement {
           padding: 2px 4px;
           border-radius: 3px;
           font-weight: 600;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+        .var-highlight:hover {
+          opacity: 0.7;
         }
         .field-value ul {
           list-style: none;
@@ -400,6 +405,9 @@ class SnippetItem extends HTMLElement {
 
           // Restore cursor position after DOM update
           this.setCursorOffsetSimple(e.target, cursorOffset);
+
+          // Re-attach click handlers for variable spans
+          this.attachVariableSpanHandlers();
         }
 
         if (this.variables.length !== oldVarCount) {
@@ -415,6 +423,9 @@ class SnippetItem extends HTMLElement {
           });
         }
       });
+
+      // Attach initial click handlers for variable spans
+      this.attachVariableSpanHandlers();
 
       outputInput.addEventListener('input', (e) => {
         this.snippet.output = e.target.value;
@@ -624,8 +635,8 @@ class SnippetItem extends HTMLElement {
         result += this.escapeHtml(command.substring(lastEnd, pos.start));
       }
 
-      // Add highlighted variable
-      result += `<span class="var-highlight" style="background-color: ${pos.color}20; color: ${pos.color}; border: 1px solid ${pos.color}40;">${this.escapeHtml(pos.fullText)}</span>`;
+      // Add highlighted variable with data attribute for clicking
+      result += `<span class="var-highlight" data-var-name="${this.escapeAttr(pos.name)}" style="background-color: ${pos.color}20; color: ${pos.color}; border: 1px solid ${pos.color}40;">${this.escapeHtml(pos.fullText)}</span>`;
 
       lastEnd = pos.end;
     });
@@ -636,6 +647,48 @@ class SnippetItem extends HTMLElement {
     }
 
     return result;
+  }
+
+  /**
+   * Attach click handlers to variable spans in command editor
+   */
+  attachVariableSpanHandlers() {
+    const cmdInput = this.shadowRoot.getElementById('command-input');
+    if (!cmdInput) return;
+
+    const varSpans = cmdInput.querySelectorAll('.var-highlight');
+    varSpans.forEach(span => {
+      span.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const varName = span.dataset.varName;
+        if (!varName) return;
+
+        // Find the variable index
+        const varIdx = this.variables.findIndex(v => v.name === varName);
+        if (varIdx === -1) return;
+
+        // Expand variables section if not already expanded
+        if (!this.variablesExpanded) {
+          this.variablesExpanded = true;
+          // Re-render to show variables section
+          this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+        }
+
+        // Focus on the first input of this variable
+        requestAnimationFrame(() => {
+          const varInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="0"]`);
+          if (varInput) {
+            varInput.focus();
+            varInput.select();
+
+            // Scroll the variable into view
+            varInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      });
+    });
   }
 
   /**
