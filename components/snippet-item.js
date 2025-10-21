@@ -13,7 +13,6 @@ class SnippetItem extends HTMLElement {
     this.index = index;
     this.snippet = snippet;
 
-    const isEven = index % 2 === 0;
     const tags = snippet.tag || [];
     const output = snippet.output || '';
 
@@ -26,12 +25,12 @@ class SnippetItem extends HTMLElement {
     this.variablesExpanded = this.variablesExpanded || false;
     this.outputExpanded = this.outputExpanded || false;
 
-    // Determine highlight class based on selection and zebra
+    // Determine highlight class based on selection only
     let highlightClass = '';
     if (isSelected) {
-      highlightClass = isEven ? 'highlight-blue1' : 'highlight-blue2';
+      highlightClass = 'highlight-blue1';
     } else {
-      highlightClass = isEven ? 'zebra-even' : 'zebra-odd';
+      highlightClass = 'default-bg';
     }
 
     this.shadowRoot.innerHTML = `
@@ -54,6 +53,9 @@ class SnippetItem extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 0.75rem;
+        }
+        .default-bg {
+          background-color: #f9f9f9;
         }
         .snippet-header input[type="checkbox"] {
           cursor: pointer;
