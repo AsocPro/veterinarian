@@ -283,8 +283,16 @@
         this.render([]);
       }
 
-      render(snippets) {
+      render(snippets, resetFilters = true) {
         this.allSnippets = snippets;
+
+        // Reset filters when switching files
+        if (resetFilters) {
+          this.selectedTags.clear();
+          this.searchQuery = '';
+          this.fuse = null;
+        }
+
         this.applyFilters();
         this.renderUI();
       }
@@ -538,6 +546,10 @@
               this.filteredSnippets[idx][field] = value;
               // Mark file as dirty
               window.markFileDirty();
+              // If tags were modified, re-render to update tag dropdown
+              if (field === 'tag') {
+                this.renderUI();
+              }
             },
             // onDelete
             (idx) => {
@@ -549,8 +561,8 @@
               }
               // Update global state
               window.updateSnippetsInFile(this.allSnippets);
-              // Re-render
-              this.render(this.allSnippets);
+              // Re-render without resetting filters (we're still in the same file)
+              this.render(this.allSnippets, false);
             },
             // onCopy (stub for now)
             (idx) => {
@@ -686,14 +698,63 @@
               display: flex;
               flex-wrap: wrap;
               gap: 0.5rem;
+              align-items: center;
             }
-            .field-value li {
+            .tag-item {
               background-color: #e3f2fd;
               color: #1976d2;
               padding: 0.25rem 0.75rem;
               border-radius: 12px;
               font-size: 12px;
               font-weight: 500;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .tag-remove {
+              background: none;
+              border: none;
+              color: #1976d2;
+              cursor: pointer;
+              padding: 0;
+              font-size: 14px;
+              line-height: 1;
+              font-weight: bold;
+            }
+            .tag-remove:hover {
+              color: #d32f2f;
+            }
+            .tag-add-container {
+              display: flex;
+              gap: 0.5rem;
+              align-items: center;
+            }
+            .tag-input {
+              padding: 0.25rem 0.5rem;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 12px;
+            }
+            .tag-input:focus {
+              outline: none;
+              border-color: #2196f3;
+            }
+            .output-textarea {
+              width: 100%;
+              min-height: 60px;
+              background-color: #f5f5f5;
+              padding: 0.75rem;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-family: 'Courier New', monospace;
+              font-size: 13px;
+              line-height: 1.5;
+              resize: vertical;
+            }
+            .output-textarea:focus {
+              outline: none;
+              border-color: #2196f3;
+              background-color: #fff;
             }
             .field-value pre {
               background-color: #f5f5f5;
@@ -722,24 +783,30 @@
                   <textarea id="command-input">${this.escapeHtml(snippet.command || '')}</textarea>
                 </div>
               </div>
-              ${tags.length > 0 ? `
-                <div class="snippet-field">
-                  <div class="field-label">Tags</div>
-                  <div class="field-value">
-                    <ul>
-                      ${tags.map(tag => `<li>${this.escapeHtml(tag)}</li>`).join('')}
-                    </ul>
-                  </div>
+              <div class="snippet-field">
+                <div class="field-label">Tags</div>
+                <div class="field-value">
+                  <ul id="tags-list">
+                    ${tags.map((tag, tagIndex) => `
+                      <li class="tag-item">
+                        <span>${this.escapeHtml(tag)}</span>
+                        <button class="tag-remove" data-tag-index="${tagIndex}" title="Remove tag">&times;</button>
+                      </li>
+                    `).join('')}
+                    <li class="tag-add-container">
+                      <button class="btn btn-small" id="show-tag-input">+ Add Tag</button>
+                      <input type="text" class="tag-input" id="tag-input" placeholder="Tag name" style="display: none;">
+                      <button class="btn btn-small btn-primary" id="add-tag-btn" style="display: none;">Add</button>
+                    </li>
+                  </ul>
                 </div>
-              ` : ''}
-              ${output ? `
-                <div class="snippet-field">
-                  <div class="field-label">Output</div>
-                  <div class="field-value">
-                    <pre>${this.escapeHtml(output)}</pre>
-                  </div>
+              </div>
+              <div class="snippet-field">
+                <div class="field-label">Output</div>
+                <div class="field-value">
+                  <textarea class="output-textarea" id="output-input" placeholder="Expected output (optional)">${this.escapeHtml(output)}</textarea>
                 </div>
-              ` : ''}
+              </div>
             </div>
           </div>
         `;
@@ -754,6 +821,7 @@
         // Attach edit listeners
         const descInput = this.shadowRoot.getElementById('description-input');
         const cmdInput = this.shadowRoot.getElementById('command-input');
+        const outputInput = this.shadowRoot.getElementById('output-input');
 
         if (this.onEdit) {
           descInput.addEventListener('input', (e) => {
@@ -765,7 +833,55 @@
             this.snippet.command = e.target.value;
             this.onEdit(this.index, 'command', e.target.value);
           });
+
+          outputInput.addEventListener('input', (e) => {
+            this.snippet.output = e.target.value;
+            this.onEdit(this.index, 'output', e.target.value);
+          });
         }
+
+        // Attach tag management listeners
+        const showTagInputBtn = this.shadowRoot.getElementById('show-tag-input');
+        const tagInput = this.shadowRoot.getElementById('tag-input');
+        const addTagBtn = this.shadowRoot.getElementById('add-tag-btn');
+
+        showTagInputBtn.addEventListener('click', () => {
+          showTagInputBtn.style.display = 'none';
+          tagInput.style.display = 'inline-block';
+          addTagBtn.style.display = 'inline-block';
+          tagInput.focus();
+        });
+
+        const addTag = () => {
+          const tagValue = tagInput.value.trim();
+          if (tagValue && !this.snippet.tag.includes(tagValue)) {
+            this.snippet.tag.push(tagValue);
+            if (this.onEdit) {
+              this.onEdit(this.index, 'tag', this.snippet.tag);
+              // The parent will re-render everything including this item, updating the tag dropdown
+            }
+          }
+        };
+
+        addTagBtn.addEventListener('click', addTag);
+        tagInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addTag();
+          }
+        });
+
+        // Attach tag remove listeners
+        this.shadowRoot.querySelectorAll('.tag-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const tagIndex = parseInt(e.target.dataset.tagIndex);
+            this.snippet.tag.splice(tagIndex, 1);
+            if (this.onEdit) {
+              this.onEdit(this.index, 'tag', this.snippet.tag);
+              // The parent will re-render everything including this item, updating the tag dropdown
+            }
+          });
+        });
 
         // Attach action button listeners
         this.shadowRoot.getElementById('copy-btn').addEventListener('click', () => {
