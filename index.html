@@ -33,6 +33,25 @@
       selectedFileIndex: -1
     };
 
+    // Global helper functions
+    window.markFileDirty = function() {
+      if (appState.selectedFileIndex >= 0 && appState.selectedFileIndex < appState.openFiles.length) {
+        const file = appState.openFiles[appState.selectedFileIndex];
+        file.dirty = true;
+        updateFileList();
+      }
+    };
+
+    window.updateSnippetsInFile = function(snippets) {
+      if (appState.selectedFileIndex >= 0 && appState.selectedFileIndex < appState.openFiles.length) {
+        const file = appState.openFiles[appState.selectedFileIndex];
+        file.parsed.snippets = snippets;
+        file.dirty = true;
+        updateFileList();
+        updateSnippetList();
+      }
+    };
+
     // File operations
     function handleFileUpload(event) {
       const files = event.target.files;
@@ -189,6 +208,11 @@
               font-size: 13px;
               word-break: break-word;
             }
+            .file-name.dirty::after {
+              content: ' *';
+              color: #f44336;
+              font-weight: bold;
+            }
             .file-actions {
               display: flex;
               gap: 0.25rem;
@@ -202,7 +226,7 @@
             ${files.length === 0 ? '<div style="padding: 1rem; color: #999; font-size: 13px;">No files open</div>' : ''}
             ${files.map((file, index) => `
               <div class="file-item ${index === selectedIndex ? 'selected' : ''}">
-                <div class="file-name">${this.escapeHtml(file.name)}</div>
+                <div class="file-name ${file.dirty ? 'dirty' : ''}">${this.escapeHtml(file.name)}</div>
                 <div class="file-actions">
                   ${index !== selectedIndex ? `<button class="btn btn-small" data-select="${index}">Select</button>` : ''}
                   <button class="btn btn-small btn-danger" data-close="${index}">Close</button>
@@ -496,14 +520,44 @@
         const snippetItems = this.shadowRoot.querySelectorAll('snippet-item');
         snippetItems.forEach((item, index) => {
           const isSelected = this.selectedIndices.has(index);
-          item.render(this.filteredSnippets[index], index, isSelected, (idx, checked) => {
-            if (checked) {
-              this.selectedIndices.add(idx);
-            } else {
-              this.selectedIndices.delete(idx);
+          item.render(
+            this.filteredSnippets[index],
+            index,
+            isSelected,
+            // onCheckChange
+            (idx, checked) => {
+              if (checked) {
+                this.selectedIndices.add(idx);
+              } else {
+                this.selectedIndices.delete(idx);
+              }
+              this.renderUI();
+            },
+            // onEdit
+            (idx, field, value) => {
+              this.filteredSnippets[idx][field] = value;
+              // Mark file as dirty
+              window.markFileDirty();
+            },
+            // onDelete
+            (idx) => {
+              // Remove from allSnippets array
+              const snippetToDelete = this.filteredSnippets[idx];
+              const allIndex = this.allSnippets.indexOf(snippetToDelete);
+              if (allIndex > -1) {
+                this.allSnippets.splice(allIndex, 1);
+              }
+              // Update global state
+              window.updateSnippetsInFile(this.allSnippets);
+              // Re-render
+              this.render(this.allSnippets);
+            },
+            // onCopy (stub for now)
+            (idx) => {
+              console.log('Copy snippet at index', idx);
+              alert('Copy snippet functionality will be implemented in a later phase');
             }
-            this.renderUI();
-          });
+          );
         });
       }
 
@@ -529,13 +583,25 @@
         this.attachShadow({ mode: 'open' });
       }
 
-      render(snippet, index, isSelected = false, onCheckChange = null) {
+      render(snippet, index, isSelected = false, onCheckChange = null, onEdit = null, onDelete = null, onCopy = null) {
         this.onCheckChange = onCheckChange;
+        this.onEdit = onEdit;
+        this.onDelete = onDelete;
+        this.onCopy = onCopy;
         this.index = index;
+        this.snippet = snippet;
 
         const isEven = index % 2 === 0;
         const tags = snippet.tag || [];
         const output = snippet.output || '';
+
+        // Determine highlight class based on selection and zebra
+        let highlightClass = '';
+        if (isSelected) {
+          highlightClass = isEven ? 'highlight-blue1' : 'highlight-blue2';
+        } else {
+          highlightClass = isEven ? 'zebra-even' : 'zebra-odd';
+        }
 
         this.shadowRoot.innerHTML = `
           <link rel="stylesheet" href="styles.css">
@@ -550,10 +616,6 @@
               overflow: hidden;
               transition: all 0.2s ease;
             }
-            .snippet-container.selected {
-              border-color: #2196f3;
-              box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-            }
             .snippet-header {
               padding: 0.75rem 1rem;
               font-weight: 600;
@@ -565,8 +627,22 @@
             .snippet-header input[type="checkbox"] {
               cursor: pointer;
             }
-            .snippet-title {
+            .snippet-title-input {
               flex: 1;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              padding: 0.5rem;
+              font-size: 14px;
+              font-weight: 600;
+              background-color: #fff;
+            }
+            .snippet-title-input:focus {
+              outline: none;
+              border-color: #2196f3;
+            }
+            .snippet-actions {
+              display: flex;
+              gap: 0.25rem;
             }
             .snippet-body {
               padding: 1rem;
@@ -586,15 +662,22 @@
               text-transform: uppercase;
               letter-spacing: 0.5px;
             }
-            .field-value pre {
+            .field-value textarea {
+              width: 100%;
+              min-height: 80px;
               background-color: #f5f5f5;
               padding: 0.75rem;
+              border: 1px solid #ddd;
               border-radius: 4px;
-              overflow-x: auto;
-              margin: 0;
               font-family: 'Courier New', monospace;
               font-size: 13px;
               line-height: 1.5;
+              resize: vertical;
+            }
+            .field-value textarea:focus {
+              outline: none;
+              border-color: #2196f3;
+              background-color: #fff;
             }
             .field-value ul {
               list-style: none;
@@ -612,17 +695,31 @@
               font-size: 12px;
               font-weight: 500;
             }
+            .field-value pre {
+              background-color: #f5f5f5;
+              padding: 0.75rem;
+              border-radius: 4px;
+              overflow-x: auto;
+              margin: 0;
+              font-family: 'Courier New', monospace;
+              font-size: 13px;
+              line-height: 1.5;
+            }
           </style>
-          <div class="snippet-container ${isSelected ? 'selected' : ''}">
-            <div class="snippet-header ${isEven ? 'zebra-even' : 'zebra-odd'}">
+          <div class="snippet-container">
+            <div class="snippet-header ${highlightClass}">
               <input type="checkbox" id="snippet-checkbox" ${isSelected ? 'checked' : ''}>
-              <span class="snippet-title">${this.escapeHtml(snippet.description || 'Untitled Snippet')}</span>
+              <input type="text" class="snippet-title-input" id="description-input" value="${this.escapeAttr(snippet.description || '')}" placeholder="Enter description">
+              <div class="snippet-actions">
+                <button class="btn btn-small" id="copy-btn">Copy</button>
+                <button class="btn btn-small btn-danger" id="delete-btn">Delete</button>
+              </div>
             </div>
             <div class="snippet-body">
               <div class="snippet-field">
                 <div class="field-label">Command</div>
                 <div class="field-value">
-                  <pre>${this.escapeHtml(snippet.command || '')}</pre>
+                  <textarea id="command-input">${this.escapeHtml(snippet.command || '')}</textarea>
                 </div>
               </div>
               ${tags.length > 0 ? `
@@ -653,6 +750,44 @@
             this.onCheckChange(this.index, e.target.checked);
           });
         }
+
+        // Attach edit listeners
+        const descInput = this.shadowRoot.getElementById('description-input');
+        const cmdInput = this.shadowRoot.getElementById('command-input');
+
+        if (this.onEdit) {
+          descInput.addEventListener('input', (e) => {
+            this.snippet.description = e.target.value;
+            this.onEdit(this.index, 'description', e.target.value);
+          });
+
+          cmdInput.addEventListener('input', (e) => {
+            this.snippet.command = e.target.value;
+            this.onEdit(this.index, 'command', e.target.value);
+          });
+        }
+
+        // Attach action button listeners
+        this.shadowRoot.getElementById('copy-btn').addEventListener('click', () => {
+          if (this.onCopy) {
+            this.onCopy(this.index);
+          } else {
+            console.log('Copy snippet clicked (stub)');
+            alert('Copy snippet functionality will be implemented in a later phase');
+          }
+        });
+
+        this.shadowRoot.getElementById('delete-btn').addEventListener('click', () => {
+          if (this.onDelete) {
+            if (confirm('Delete this snippet?')) {
+              this.onDelete(this.index);
+            }
+          }
+        });
+      }
+
+      escapeAttr(text) {
+        return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
       escapeHtml(text) {
