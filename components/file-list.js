@@ -64,6 +64,7 @@ class FileList extends HTMLElement {
             <div class="file-name ${file.dirty ? 'dirty' : ''}">${this.escapeHtml(file.name)}</div>
             <div class="file-actions">
               ${index !== selectedIndex ? `<button class="btn btn-small" data-select="${index}">Select</button>` : ''}
+              ${index === selectedIndex ? `<button class="btn btn-small btn-primary" data-save="${index}">Save</button>` : ''}
               <button class="btn btn-small btn-danger" data-close="${index}">Close</button>
             </div>
           </div>
@@ -84,6 +85,13 @@ class FileList extends HTMLElement {
       btn.addEventListener('click', (e) => {
         const index = parseInt(e.target.dataset.select);
         window.selectFile(index);
+      });
+    });
+
+    this.shadowRoot.querySelectorAll('[data-save]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.save);
+        window.saveFile(index);
       });
     });
 

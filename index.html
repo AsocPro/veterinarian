@@ -167,10 +167,40 @@
       }
     }
 
+    function saveFile(index) {
+      if (index < 0 || index >= appState.openFiles.length) return;
+
+      const file = appState.openFiles[index];
+
+      try {
+        // Convert parsed object back to TOML
+        const tomlContent = window.TomlParser.stringify(file.parsed);
+
+        // Create blob and download
+        const blob = new Blob([tomlContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Clear dirty flag
+        file.dirty = false;
+        updateFileList();
+      } catch (err) {
+        console.error('Failed to save file:', err);
+        alert(`Failed to save ${file.name}: ${err.message}`);
+      }
+    }
+
     // Expose functions to window for component access
     window.createNewFile = createNewFile;
     window.selectFile = selectFile;
     window.closeFile = closeFile;
+    window.saveFile = saveFile;
 
     // Setup file input listener
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
