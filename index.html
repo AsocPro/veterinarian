@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/@ltd/j-toml@1.38.0/index.js"></script>
   <script src="https://unpkg.com/fuse.js@6.6.2/dist/fuse.basic.min.js"></script>
   <script src="utils/toml-parser.js"></script>
+  <script src="utils/var-parser.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -607,6 +608,10 @@
         const tags = snippet.tag || [];
         const output = snippet.output || '';
 
+        // Parse variables from command
+        this.variables = window.VarParser.parseVariables(snippet.command || '');
+        this.variablesExpanded = this.variablesExpanded || false;
+
         // Determine highlight class based on selection and zebra
         let highlightClass = '';
         if (isSelected) {
@@ -766,6 +771,72 @@
               font-size: 13px;
               line-height: 1.5;
             }
+            .variables-header {
+              cursor: pointer;
+              user-select: none;
+            }
+            .variables-toggle {
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .triangle {
+              display: inline-block;
+              transition: transform 0.2s ease;
+              font-size: 10px;
+            }
+            .triangle.expanded {
+              transform: rotate(90deg);
+            }
+            .variables-section {
+              display: none;
+              margin-top: 0.5rem;
+              padding: 0.75rem;
+              background-color: #f9f9f9;
+              border-radius: 4px;
+            }
+            .variables-section.expanded {
+              display: block;
+            }
+            .variable-item {
+              margin-bottom: 1rem;
+              padding: 0.75rem;
+              background-color: #fff;
+              border-radius: 4px;
+              border: 1px solid #e0e0e0;
+            }
+            .variable-item:last-child {
+              margin-bottom: 0;
+            }
+            .variable-name {
+              padding: 0.5rem;
+              margin-bottom: 0.5rem;
+              border-radius: 4px;
+              font-family: 'Courier New', monospace;
+              font-size: 13px;
+            }
+            .variable-values {
+              display: flex;
+              flex-direction: column;
+              gap: 0.5rem;
+            }
+            .variable-value-row {
+              display: flex;
+              gap: 0.5rem;
+              align-items: center;
+            }
+            .variable-input {
+              flex: 1;
+              padding: 0.5rem;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 13px;
+              font-family: 'Courier New', monospace;
+            }
+            .variable-input:focus {
+              outline: none;
+              border-color: #2196f3;
+            }
           </style>
           <div class="snippet-container">
             <div class="snippet-header ${highlightClass}">
@@ -802,6 +873,45 @@
                 </div>
               </div>
               <div class="snippet-field">
+                <div class="field-label variables-header">
+                  <span class="variables-toggle" id="variables-toggle">
+                    <span class="triangle ${this.variablesExpanded ? 'expanded' : ''}">\u25B6</span>
+                    Variables (${this.variables.length})
+                  </span>
+                </div>
+                <div class="variables-section ${this.variablesExpanded ? 'expanded' : ''}" id="variables-section">
+                  ${this.variables.length === 0 ? `
+                    <div style="padding: 1rem; color: #999; font-size: 13px; text-align: center;">
+                      No variables found. Use &lt;varname&gt; syntax in command.
+                    </div>
+                  ` : `
+                    ${this.variables.map((varObj, varIdx) => `
+                      <div class="variable-item">
+                        <div class="variable-name" style="background-color: ${varObj.color}20; border-left: 3px solid ${varObj.color};">
+                          <span style="color: ${varObj.color}; font-weight: bold;">&lt;${this.escapeHtml(varObj.name)}&gt;</span>
+                        </div>
+                        <div class="variable-values">
+                          ${varObj.isList ? `
+                            ${varObj.listValues.map((val, valIdx) => `
+                              <div class="variable-value-row">
+                                <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="${valIdx}" value="${this.escapeAttr(val)}" placeholder="Value ${valIdx + 1}">
+                                <button class="btn btn-small btn-danger" data-remove-val="${varIdx}-${valIdx}" title="Remove value">&minus;</button>
+                              </div>
+                            `).join('')}
+                            <button class="btn btn-small" data-add-val="${varIdx}">+ Add Value</button>
+                          ` : `
+                            <div class="variable-value-row">
+                              <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="0" value="${this.escapeAttr(varObj.value)}" placeholder="Value">
+                              <button class="btn btn-small" data-make-list="${varIdx}">Make List</button>
+                            </div>
+                          `}
+                        </div>
+                      </div>
+                    `).join('')}
+                  `}
+                </div>
+              </div>
+              <div class="snippet-field">
                 <div class="field-label">Output</div>
                 <div class="field-value">
                   <textarea class="output-textarea" id="output-input" placeholder="Expected output (optional)">${this.escapeHtml(output)}</textarea>
@@ -832,11 +942,104 @@
           cmdInput.addEventListener('input', (e) => {
             this.snippet.command = e.target.value;
             this.onEdit(this.index, 'command', e.target.value);
+            // Re-parse variables when command changes but don't re-render unless count changed
+            const oldVarCount = this.variables.length;
+            this.variables = window.VarParser.parseVariables(e.target.value);
+            if (this.variables.length !== oldVarCount) {
+              // Re-render when variable count changes to update the variables section
+              const cursorPos = e.target.selectionStart;
+              requestAnimationFrame(() => {
+                this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+                // Restore focus to command input
+                const newCmdInput = this.shadowRoot.getElementById('command-input');
+                if (newCmdInput) {
+                  newCmdInput.focus();
+                  newCmdInput.setSelectionRange(cursorPos, cursorPos);
+                }
+              });
+            }
           });
 
           outputInput.addEventListener('input', (e) => {
             this.snippet.output = e.target.value;
             this.onEdit(this.index, 'output', e.target.value);
+          });
+        }
+
+        // Attach variables section listeners
+        const variablesToggle = this.shadowRoot.getElementById('variables-toggle');
+        if (variablesToggle) {
+          variablesToggle.addEventListener('click', () => {
+            this.variablesExpanded = !this.variablesExpanded;
+            this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+          });
+
+          // Variable value inputs
+          this.shadowRoot.querySelectorAll('.variable-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+              const varIdx = parseInt(e.target.dataset.varIdx);
+              const valIdx = parseInt(e.target.dataset.valIdx);
+              const varObj = this.variables[varIdx];
+
+              if (varObj.isList) {
+                varObj.listValues[valIdx] = e.target.value;
+              } else {
+                varObj.value = e.target.value;
+              }
+
+              // Update command with new values
+              this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+              cmdInput.value = this.snippet.command;
+
+              if (this.onEdit) {
+                this.onEdit(this.index, 'command', this.snippet.command);
+              }
+            });
+          });
+
+          // Add value button (for lists)
+          this.shadowRoot.querySelectorAll('[data-add-val]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const varIdx = parseInt(e.target.dataset.addVal);
+              this.variables[varIdx].listValues.push('');
+              this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+            });
+          });
+
+          // Remove value button (for lists)
+          this.shadowRoot.querySelectorAll('[data-remove-val]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const [varIdx, valIdx] = e.target.dataset.removeVal.split('-').map(Number);
+              const varObj = this.variables[varIdx];
+              if (varObj.listValues.length > 1) {
+                varObj.listValues.splice(valIdx, 1);
+                // Update command
+                this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+                cmdInput.value = this.snippet.command;
+                if (this.onEdit) {
+                  this.onEdit(this.index, 'command', this.snippet.command);
+                }
+                this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+              }
+            });
+          });
+
+          // Make list button
+          this.shadowRoot.querySelectorAll('[data-make-list]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const varIdx = parseInt(e.target.dataset.makeList);
+              const varObj = this.variables[varIdx];
+              varObj.isList = true;
+              varObj.listValues = [varObj.value || '', ''];
+              varObj.value = '';
+              // Update command
+              this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+              cmdInput.value = this.snippet.command;
+              if (this.onEdit) {
+                this.onEdit(this.index, 'command', this.snippet.command);
+              }
+              this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+            });
           });
         }
 
