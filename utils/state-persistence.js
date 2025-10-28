@@ -1,5 +1,6 @@
 // State Persistence Utility
 // Handles saving and loading application state to/from localStorage
+// Files are stored as JSON in localStorage, but imported/exported as TOML
 
 (function() {
   'use strict';
@@ -8,18 +9,18 @@
 
   /**
    * Serialize and save application state to localStorage
+   * Store the parsed snippets directly as JSON for reliable persistence
    * @param {Object} appState - The application state object
    * @param {Array} appState.openFiles - Array of open file objects
    * @param {number} appState.selectedFileIndex - Index of selected file
    */
   function saveState(appState) {
     try {
-      // Create a serializable version of the state
-      // Exclude the 'parsed' property as it contains non-serializable objects
+      // Store snippets as JSON, not TOML content
       const serializableState = {
         openFiles: appState.openFiles.map(file => ({
           name: file.name,
-          content: file.content,
+          snippets: file.parsed?.snippets || [],
           dirty: file.dirty || false
         })),
         selectedFileIndex: appState.selectedFileIndex
@@ -34,7 +35,8 @@
   }
 
   /**
-   * Load application state from localStorage and re-parse TOML content
+   * Load application state from localStorage
+   * Reconstruct file objects with parsed snippets from JSON
    * @returns {Object|null} Restored appState object or null if no saved state
    */
   function loadState() {
@@ -52,22 +54,16 @@
         return null;
       }
 
-      // Re-parse TOML content for each file
+      // Restore files with parsed snippets from localStorage
       const restoredFiles = savedState.openFiles.map(file => {
+        const snippets = file.snippets || [];
+
         const fileObj = {
           name: file.name,
-          content: file.content,
+          content: null, // Will be regenerated on export
           dirty: file.dirty || false,
-          parsed: null
+          parsed: { snippets: snippets }
         };
-
-        // Parse TOML
-        try {
-          fileObj.parsed = window.TomlParser.parse(file.content);
-        } catch (err) {
-          console.error(`Failed to parse TOML for ${file.name}:`, err);
-          // Keep the file but with null parsed - user can still see/edit content
-        }
 
         return fileObj;
       });
