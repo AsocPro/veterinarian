@@ -218,8 +218,11 @@ const appState = {
 - [ ] Keyboard shortcuts (Ctrl+S to save, etc.)
 - [ ] Drag-and-drop snippet reordering
 - [ ] Import/export individual snippets
-- [ ] Snippet templates
+- [ ] Duplicate snippet button
+
+### Future Rough Ideas
 - [ ] Syntax highlighting in command field
+- [ ] Git integration for file sync
 - [ ] Execute commands directly from the app (with user confirmation)
 - [ ] Command history tracking
 
@@ -229,7 +232,7 @@ This is a personal project for editing pet snippet files. Feel free to fork and 
 
 ## Why "Veterinarian"?
 
-Because it's a tool to "doctor up" your **pet** snippet files! Get it? 🩺🐾
+Because it's a tool to "doctor up" your **pet** snippet files! 
 
 ## License
 
