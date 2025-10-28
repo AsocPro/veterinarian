@@ -1,0 +1,21 @@
+{
+  "name": "veterinarian",
+  "version": "1.0.0",
+  "description": "Browser-based editor for pet CLI snippet TOML files",
+  "scripts": {
+    "screenshots": "../scripts/generate-screenshots.sh",
+    "screenshots:js": "node take-screenshots.js",
+    "serve": "cd .. && python3 -m http.server 8000"
+  },
+  "keywords": [
+    "pet",
+    "snippets",
+    "toml",
+    "editor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}
