@@ -63,6 +63,7 @@ body {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  position: relative;
 }
 
 .sidebar {
@@ -71,6 +72,13 @@ body {
   border-right: 1px solid var(--border-primary);
   overflow-y: auto;
   flex-shrink: 0;
+  transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar.collapsed {
+  margin-left: -250px;
 }
 
 .main {
@@ -78,6 +86,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: margin-left 0.3s ease;
 }
 
 .header {
@@ -88,6 +97,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .header h1 {
@@ -204,6 +219,35 @@ body {
 .btn-small {
   padding: 0.25rem 0.5rem;
   font-size: 12px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background-color: var(--button-hover);
+}
+
+.btn-icon:active {
+  background-color: var(--button-active);
+}
+
+.sidebar-toggle-icon {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 /* Dialog/Modal styles */

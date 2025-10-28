@@ -16,12 +16,17 @@
 </head>
 <body>
   <div class="app-container">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <file-list></file-list>
     </aside>
     <main class="main">
       <header class="header">
-        <h1 id="file-name-display">Pet Snippet Editor</h1>
+        <div class="header-left">
+          <button id="sidebar-toggle" class="btn-icon" title="Toggle file list">
+            <span class="sidebar-toggle-icon">☰</span>
+          </button>
+          <h1 id="file-name-display">Pet Snippet Editor</h1>
+        </div>
         <div class="theme-toggle">
           <button id="theme-light">Light</button>
           <button id="theme-auto" class="active">Auto</button>
@@ -370,8 +375,29 @@
     document.getElementById('theme-auto').addEventListener('click', () => setTheme('auto'));
     document.getElementById('theme-dark').addEventListener('click', () => setTheme('dark'));
 
+    // Sidebar toggle functionality
+    function initSidebarToggle() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+
+      // Load saved sidebar state
+      const sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+      if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+      }
+
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebar-collapsed', isCollapsed);
+      });
+    }
+
     // Initialize theme first (to avoid flash of unstyled content)
     initTheme();
+
+    // Initialize sidebar toggle
+    initSidebarToggle();
 
     // Initialize app and load saved state
     initializeApp();

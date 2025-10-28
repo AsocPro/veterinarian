@@ -42,12 +42,14 @@ The killer feature - a powerful variable editor that understands pet's variable 
 
 ### UI/UX
 - **Clean sidebar**: File list with selection and close buttons
+- **Collapsible sidebar**: Toggle file list visibility for more workspace on smaller screens
 - **Zebra striping**: Alternating colors for easy snippet scanning
 - **Persistent filters**: Search and tag filters maintained while editing
 - **No server required**: Runs entirely in your browser
 - **Web Components architecture**: Modular, maintainable code
 - **Dark mode**: Toggle between light and dark themes for comfortable editing
 - **File renaming**: Rename files directly in the sidebar for better organization
+- **Mobile-friendly**: Responsive design works well on tablets and mobile devices
 
 ## Getting Started
 
@@ -86,6 +88,7 @@ The killer feature - a powerful variable editor that understands pet's variable 
    - Toggle between "Any" and "All" tag matching modes
 
 6. **Customize your experience**:
+   - Click the hamburger menu (☰) in the header to toggle the file list sidebar
    - Click the theme toggle in the header to switch between light and dark modes
    - Double-click file names in the sidebar to rename them
 
@@ -197,6 +200,7 @@ const appState = {
 - [x] Test snippets with variable interpolation preview
 - [x] Copy interpolated commands to clipboard
 - [x] Click variable in command to highlight in variables section
+- [x] Collapsible sidebar for mobile/small screens
 
 ### Future Enhancements 🚀
 - [ ] Copy/move snippets between files
