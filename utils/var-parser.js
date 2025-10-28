@@ -1,37 +1,55 @@
 // Variable parser for pet snippet commands
 window.VarParser = {
-  // Color palette for variables
-  colors: [
-    '#a0c0ff', // Light blue
-    '#80a0ff', // Medium blue
-    '#ffa0a0', // Light red
-    '#ffc080', // Light orange
-    '#a0ffa0', // Light green
-    '#c0a0ff', // Light purple
-    '#ffa0ff', // Light magenta
-    '#a0ffff', // Light cyan
-    '#ffe0a0', // Light yellow
-    '#d0d0d0'  // Light gray
+  // Color palette for variables (loaded from settings)
+  colors: JSON.parse(localStorage.getItem('variable-colors') || 'null') || [
+    '#e91e63',
+    '#9c27b0',
+    '#3f51b5',
+    '#2196f3',
+    '#009688',
+    '#ff9800',
+    '#f44336'
   ],
 
-  /**
-   * Hash a string to get a consistent color index
-   */
-  hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash = hash & hash;
-    }
-    return Math.abs(hash) % this.colors.length;
+  // Track variable names to color index mapping (reset per parse)
+  variableColorMap: new Map(),
+  nextColorIndex: 0,
+
+  // Initialize and listen for color changes
+  init() {
+    window.addEventListener('variable-colors-changed', (e) => {
+      this.colors = e.detail.colors;
+      // Clear color map when colors change
+      this.variableColorMap.clear();
+      this.nextColorIndex = 0;
+    });
   },
 
   /**
-   * Get color for a variable name
+   * Reset color assignment (call this when parsing a new command)
+   */
+  resetColorAssignment() {
+    this.variableColorMap.clear();
+    this.nextColorIndex = 0;
+  },
+
+  /**
+   * Get color for a variable name (sequential assignment)
    */
   getColor(varName) {
-    const index = this.hashString(varName);
-    return this.colors[index];
+    // Reload colors from localStorage each time to ensure we have latest
+    this.colors = JSON.parse(localStorage.getItem('variable-colors') || 'null') || this.colors;
+
+    if (this.variableColorMap.has(varName)) {
+      return this.colors[this.variableColorMap.get(varName)];
+    }
+
+    // Assign next color in sequence
+    const colorIndex = this.nextColorIndex % this.colors.length;
+    this.variableColorMap.set(varName, colorIndex);
+    this.nextColorIndex++;
+
+    return this.colors[colorIndex];
   },
 
   /**
@@ -40,6 +58,9 @@ window.VarParser = {
    */
   parseVariables(command) {
     if (!command) return [];
+
+    // Reset color assignment for this command
+    this.resetColorAssignment();
 
     const varRegex = /<([^>]+)>/g;
     const matches = [];

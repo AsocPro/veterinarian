@@ -13,12 +13,14 @@
   <script src="components/file-list.js"></script>
   <script src="components/snippet-list.js"></script>
   <script src="components/snippet-item.js"></script>
+  <script src="components/settings-dialog.js"></script>
 </head>
 <body>
   <div class="app-container">
     <aside class="sidebar" id="sidebar">
       <file-list></file-list>
     </aside>
+    <div class="sidebar-resize-handle" id="sidebar-resize"></div>
     <main class="main">
       <header class="header">
         <div class="header-left">
@@ -27,10 +29,15 @@
           </button>
           <h1 id="file-name-display">Pet Snippet Editor</h1>
         </div>
-        <div class="theme-toggle">
-          <button id="theme-light">Light</button>
-          <button id="theme-auto" class="active">Auto</button>
-          <button id="theme-dark">Dark</button>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="theme-toggle">
+            <button id="theme-light">Light</button>
+            <button id="theme-auto" class="active">Auto</button>
+            <button id="theme-dark">Dark</button>
+          </div>
+          <button id="settings-btn" class="btn-icon" title="Settings">
+            <span style="font-size: 1.25rem;">⚙</span>
+          </button>
         </div>
       </header>
       <div class="snippet-list-container">
@@ -84,6 +91,9 @@
       updateTheme();
       updateThemeButtons();
     }
+
+    // Expose setTheme globally for settings dialog
+    window.setTheme = setTheme;
 
     function updateThemeButtons() {
       document.querySelectorAll('.theme-toggle button').forEach(btn => {
@@ -375,12 +385,27 @@
     document.getElementById('theme-auto').addEventListener('click', () => setTheme('auto'));
     document.getElementById('theme-dark').addEventListener('click', () => setTheme('dark'));
 
-    // Sidebar toggle functionality
+    // Setup settings button listener
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      const dialog = document.createElement('settings-dialog');
+      document.body.appendChild(dialog);
+      dialog.classList.add('visible');
+      dialog.show();
+    });
+
+    // Sidebar toggle and resize functionality
     function initSidebarToggle() {
       const sidebar = document.getElementById('sidebar');
       const toggleBtn = document.getElementById('sidebar-toggle');
+      const resizeHandle = document.getElementById('sidebar-resize');
 
       // Load saved sidebar state
+      const savedWidth = localStorage.getItem('sidebar-width');
+      if (savedWidth) {
+        sidebar.style.width = savedWidth + 'px';
+        document.documentElement.style.setProperty('--sidebar-width', savedWidth + 'px');
+      }
+
       const sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
       if (sidebarCollapsed) {
         sidebar.classList.add('collapsed');
@@ -391,10 +416,59 @@
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebar-collapsed', isCollapsed);
       });
+
+      // Resize functionality
+      let isResizing = false;
+      let startX = 0;
+      let startWidth = 0;
+
+      resizeHandle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = sidebar.offsetWidth;
+        sidebar.classList.add('resizing');
+        resizeHandle.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+
+        const diff = e.clientX - startX;
+        const newWidth = startWidth + diff;
+
+        // Enforce min and max width
+        const minWidth = 150;
+        const maxWidth = 600;
+        const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+        sidebar.style.width = clampedWidth + 'px';
+        document.documentElement.style.setProperty('--sidebar-width', clampedWidth + 'px');
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          sidebar.classList.remove('resizing');
+          resizeHandle.classList.remove('resizing');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+
+          // Save the new width
+          localStorage.setItem('sidebar-width', sidebar.offsetWidth);
+        }
+      });
     }
 
     // Initialize theme first (to avoid flash of unstyled content)
     initTheme();
+
+    // Initialize variable parser
+    if (window.VarParser && window.VarParser.init) {
+      window.VarParser.init();
+    }
 
     // Initialize sidebar toggle
     initSidebarToggle();
