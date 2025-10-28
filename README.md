@@ -21,6 +21,8 @@ Veterinarian is a browser-based editor for **pet** CLI snippet TOML files. Edit,
 - **Rich editing interface**: Edit descriptions, commands, tags, and outputs
 - **Add/delete snippets**: Manage your snippet collection easily
 - **Select all/bulk operations**: Work with multiple snippets at once
+- **Test snippets**: Preview and test snippets with variable interpolation before running
+- **Copy to clipboard**: Copy interpolated commands directly from the test dialog
 
 ### Advanced Variable Management
 The killer feature - a powerful variable editor that understands pet's variable syntax:
@@ -44,6 +46,8 @@ The killer feature - a powerful variable editor that understands pet's variable 
 - **Persistent filters**: Search and tag filters maintained while editing
 - **No server required**: Runs entirely in your browser
 - **Web Components architecture**: Modular, maintainable code
+- **Dark mode**: Toggle between light and dark themes for comfortable editing
+- **File renaming**: Rename files directly in the sidebar for better organization
 
 ## Getting Started
 
@@ -68,13 +72,24 @@ The killer feature - a powerful variable editor that understands pet's variable 
    - Click on any field to edit it
    - Expand the Variables section to manage command variables
    - Add/remove tags using the +/× buttons
+   - Click "Test" to preview how the command will look with variables filled in
 
-4. **Filter and search**:
+4. **Test your snippets**:
+   - Click the "Test" button on any snippet
+   - Fill in variable values or select from dropdown lists
+   - See a live preview of the interpolated command
+   - Click "Copy to Clipboard" to copy the final command
+
+5. **Filter and search**:
    - Use the search box for fuzzy matching
    - Click "Tags" to filter by specific tags
    - Toggle between "Any" and "All" tag matching modes
 
-5. **Save your work**:
+6. **Customize your experience**:
+   - Click the theme toggle in the header to switch between light and dark modes
+   - Double-click file names in the sidebar to rename them
+
+7. **Save your work**:
    - Click the download icon next to the file name in the sidebar
    - The file will download to your default downloads folder
 
@@ -177,16 +192,21 @@ const appState = {
 - [x] Command reconstruction with smart syntax handling
 - [x] Component extraction and modularization
 - [x] Download/save functionality
+- [x] Dark mode theme support
+- [x] File renaming capability
+- [x] Test snippets with variable interpolation preview
+- [x] Copy interpolated commands to clipboard
+- [x] Click variable in command to highlight in variables section
 
 ### Future Enhancements 🚀
-- [ ] Click variable in command to highlight in variables section
-- [ ] Copy snippets to clipboard
 - [ ] Copy/move snippets between files
 - [ ] Keyboard shortcuts (Ctrl+S to save, etc.)
 - [ ] Drag-and-drop snippet reordering
 - [ ] Import/export individual snippets
 - [ ] Snippet templates
 - [ ] Syntax highlighting in command field
+- [ ] Execute commands directly from the app (with user confirmation)
+- [ ] Command history tracking
 
 ## Contributing
 
