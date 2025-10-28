@@ -75,8 +75,8 @@ class SnippetList extends HTMLElement {
           display: block;
         }
         .controls-header {
-          background-color: #fff;
-          border-bottom: 2px solid #ddd;
+          background-color: var(--bg-secondary, #fff);
+          border-bottom: 2px solid var(--border-primary, #ddd);
           padding: 1rem 1.5rem;
           display: flex;
           flex-wrap: wrap;
@@ -97,13 +97,20 @@ class SnippetList extends HTMLElement {
           gap: 0.5rem;
           font-size: 14px;
           cursor: pointer;
+          color: var(--text-primary, #333);
         }
         .search-input {
           padding: 0.5rem;
-          border: 1px solid #ccc;
+          border: 1px solid var(--border-secondary, #ccc);
           border-radius: 4px;
           font-size: 14px;
           min-width: 250px;
+          background-color: var(--button-bg, #fff);
+          color: var(--text-primary, #333);
+        }
+        .search-input:focus {
+          outline: none;
+          border-color: var(--highlight-border, #2196f3);
         }
         .tag-filter {
           position: relative;
@@ -112,8 +119,8 @@ class SnippetList extends HTMLElement {
           position: absolute;
           top: 100%;
           left: 0;
-          background: #fff;
-          border: 1px solid #ccc;
+          background: var(--bg-secondary, #fff);
+          border: 1px solid var(--border-secondary, #ccc);
           border-radius: 4px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           max-height: 300px;
@@ -131,9 +138,10 @@ class SnippetList extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          color: var(--text-primary, #333);
         }
         .tag-option:hover {
-          background-color: #f5f5f5;
+          background-color: var(--button-hover, #f5f5f5);
         }
         .tag-option input {
           cursor: pointer;
@@ -146,7 +154,7 @@ class SnippetList extends HTMLElement {
         .empty-state {
           text-align: center;
           padding: 3rem 1rem;
-          color: #999;
+          color: var(--text-secondary, #999);
         }
       </style>
       <div class="controls-header">
@@ -165,7 +173,7 @@ class SnippetList extends HTMLElement {
           <button class="btn" id="tag-filter-btn">Tags (${this.selectedTags.size})</button>
           <button class="btn btn-small" id="tag-mode-toggle">${this.tagMatchMode === 'all' ? 'All' : 'Any'}</button>
           <div class="tag-dropdown" id="tag-dropdown">
-            ${allTags.length === 0 ? '<div style="padding: 1rem; color: #999;">No tags available</div>' : ''}
+            ${allTags.length === 0 ? '<div style="padding: 1rem; color: var(--text-secondary, #999);">No tags available</div>' : ''}
             ${allTags.map(tag => `
               <label class="tag-option">
                 <input type="checkbox" value="${this.escapeHtml(tag)}" ${this.selectedTags.has(tag) ? 'checked' : ''}>

@@ -22,6 +22,11 @@
     <main class="main">
       <header class="header">
         <h1 id="file-name-display">Pet Snippet Editor</h1>
+        <div class="theme-toggle">
+          <button id="theme-light">Light</button>
+          <button id="theme-auto" class="active">Auto</button>
+          <button id="theme-dark">Dark</button>
+        </div>
       </header>
       <div class="snippet-list-container">
         <snippet-list></snippet-list>
@@ -32,6 +37,56 @@
   <input type="file" id="file-input" accept=".toml" style="display: none;" multiple>
 
   <script type="module">
+    // Theme management
+    const themeState = {
+      mode: 'auto', // 'light', 'dark', 'auto'
+      mediaQuery: null
+    };
+
+    function initTheme() {
+      // Load saved theme preference
+      const savedTheme = localStorage.getItem('theme-mode') || 'auto';
+      themeState.mode = savedTheme;
+
+      // Setup media query for auto mode
+      themeState.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      themeState.mediaQuery.addEventListener('change', updateTheme);
+
+      // Apply theme
+      updateTheme();
+      updateThemeButtons();
+    }
+
+    function updateTheme() {
+      const html = document.documentElement;
+
+      if (themeState.mode === 'light') {
+        html.removeAttribute('data-theme');
+      } else if (themeState.mode === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+      } else { // auto
+        if (themeState.mediaQuery.matches) {
+          html.setAttribute('data-theme', 'dark');
+        } else {
+          html.removeAttribute('data-theme');
+        }
+      }
+    }
+
+    function setTheme(mode) {
+      themeState.mode = mode;
+      localStorage.setItem('theme-mode', mode);
+      updateTheme();
+      updateThemeButtons();
+    }
+
+    function updateThemeButtons() {
+      document.querySelectorAll('.theme-toggle button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById(`theme-${themeState.mode}`).classList.add('active');
+    }
+
     // Global state
     const appState = {
       openFiles: [],
@@ -165,6 +220,30 @@
       window.StatePersistence.saveState(appState);
     }
 
+    function renameFile(index, newName) {
+      if (index < 0 || index >= appState.openFiles.length) return;
+      if (!newName || !newName.trim()) return;
+
+      // Check for name conflicts
+      const nameExists = appState.openFiles.some((f, i) => i !== index && f.name === newName);
+      if (nameExists) {
+        alert(`A file named "${newName}" already exists.`);
+        updateFileList();
+        return;
+      }
+
+      appState.openFiles[index].name = newName;
+      updateFileList();
+      updateHeader();
+      window.StatePersistence.saveState(appState);
+    }
+
+    function updateUI() {
+      updateFileList();
+      updateHeader();
+      updateSnippetList();
+    }
+
     function updateFileList() {
       const fileListElement = document.querySelector('file-list');
       if (fileListElement) {
@@ -275,13 +354,24 @@
     window.createNewFile = createNewFile;
     window.selectFile = selectFile;
     window.closeFile = closeFile;
+    window.renameFile = renameFile;
     window.saveFile = saveFile;
     window.copySnippetToFile = copySnippetToFile;
     window.copySnippetsToFile = copySnippetsToFile;
     window.getOpenFiles = getOpenFiles;
+    window.updateUI = updateUI;
+    window.appState = appState;
 
     // Setup file input listener
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
+
+    // Setup theme toggle listeners
+    document.getElementById('theme-light').addEventListener('click', () => setTheme('light'));
+    document.getElementById('theme-auto').addEventListener('click', () => setTheme('auto'));
+    document.getElementById('theme-dark').addEventListener('click', () => setTheme('dark'));
+
+    // Initialize theme first (to avoid flash of unstyled content)
+    initTheme();
 
     // Initialize app and load saved state
     initializeApp();

@@ -136,6 +136,11 @@ Follow the phase-specific prompts provided separately. stop after completing a p
 - Re-rendering optimization: Only re-render when necessary (e.g., variable count changes)
 - Shadow DOM: All Web Components use shadow DOM for encapsulation
 - Event delegation: Components re-render and re-attach event listeners
+- **CRITICAL - Avoid Re-rendering on Input**: When creating dialogs or forms with input fields, NEVER re-render the entire dialog on every input event. This causes focused inputs to lose focus after each character typed. Instead:
+  - Render the dialog/form ONCE on initial display
+  - Create separate update functions that modify only the affected DOM elements (e.g., update preview text, update calculated values)
+  - Attach event listeners to inputs that call these targeted update functions, NOT full re-renders
+  - Example: In test dialog, `updatePreview()` only updates the preview element, not the entire dialog innerHTML
 
 ## Known Stub Features (To Implement in Future Phases)
 - Copy Selected snippets (Phase 4 header control)

@@ -41,7 +41,7 @@ class SnippetItem extends HTMLElement {
           margin-bottom: 1rem;
         }
         .snippet-container {
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           overflow: hidden;
           transition: all 0.2s ease;
@@ -55,23 +55,24 @@ class SnippetItem extends HTMLElement {
           gap: 0.75rem;
         }
         .default-bg {
-          background-color: #f9f9f9;
+          background-color: var(--bg-zebra-even, #f9f9f9);
         }
         .snippet-header input[type="checkbox"] {
           cursor: pointer;
         }
         .snippet-title-input {
           flex: 1;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           padding: 0.5rem;
           font-size: 14px;
           font-weight: 600;
-          background-color: #fff;
+          background-color: var(--bg-secondary, #fff);
+          color: var(--text-primary, #333);
         }
         .snippet-title-input:focus {
           outline: none;
-          border-color: #2196f3;
+          border-color: var(--highlight-border, #2196f3);
         }
         .snippet-actions {
           display: flex;
@@ -79,7 +80,7 @@ class SnippetItem extends HTMLElement {
         }
         .snippet-body {
           padding: 1rem;
-          background-color: #fff;
+          background-color: var(--bg-secondary, #fff);
         }
         .snippet-field {
           margin-bottom: 1rem;
@@ -90,7 +91,7 @@ class SnippetItem extends HTMLElement {
         .field-label {
           font-size: 12px;
           font-weight: 600;
-          color: #666;
+          color: var(--text-secondary, #666);
           margin-bottom: 0.25rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -98,41 +99,43 @@ class SnippetItem extends HTMLElement {
         .field-value textarea {
           width: 100%;
           min-height: 80px;
-          background-color: #f5f5f5;
+          background-color: var(--bg-tertiary, #f5f5f5);
           padding: 0.75rem;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           font-family: 'Courier New', monospace;
           font-size: 13px;
           line-height: 1.5;
           resize: vertical;
+          color: var(--text-primary, #333);
         }
         .field-value textarea:focus {
           outline: none;
-          border-color: #2196f3;
-          background-color: #fff;
+          border-color: var(--highlight-border, #2196f3);
+          background-color: var(--bg-secondary, #fff);
         }
         .command-editor {
           width: 100%;
           min-height: 80px;
-          background-color: #f5f5f5;
+          background-color: var(--bg-tertiary, #f5f5f5);
           padding: 0.75rem;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           font-family: 'Courier New', monospace;
           font-size: 13px;
           line-height: 1.5;
           overflow-wrap: break-word;
           white-space: pre-wrap;
+          color: var(--text-primary, #333);
         }
         .command-editor:focus {
           outline: none;
-          border-color: #2196f3;
-          background-color: #fff;
+          border-color: var(--highlight-border, #2196f3);
+          background-color: var(--bg-secondary, #fff);
         }
         .command-editor:empty:before {
           content: attr(data-placeholder);
-          color: #999;
+          color: var(--text-secondary, #999);
         }
         .var-highlight {
           padding: 2px 4px;
@@ -184,33 +187,36 @@ class SnippetItem extends HTMLElement {
         }
         .tag-input {
           padding: 0.25rem 0.5rem;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           font-size: 12px;
+          background-color: var(--bg-secondary, #fff);
+          color: var(--text-primary, #333);
         }
         .tag-input:focus {
           outline: none;
-          border-color: #2196f3;
+          border-color: var(--highlight-border, #2196f3);
         }
         .output-textarea {
           width: 100%;
           min-height: 60px;
-          background-color: #f5f5f5;
+          background-color: var(--bg-tertiary, #f5f5f5);
           padding: 0.75rem;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           font-family: 'Courier New', monospace;
           font-size: 13px;
           line-height: 1.5;
           resize: vertical;
+          color: var(--text-primary, #333);
         }
         .output-textarea:focus {
           outline: none;
-          border-color: #2196f3;
-          background-color: #fff;
+          border-color: var(--highlight-border, #2196f3);
+          background-color: var(--bg-secondary, #fff);
         }
         .field-value pre {
-          background-color: #f5f5f5;
+          background-color: var(--bg-tertiary, #f5f5f5);
           padding: 0.75rem;
           border-radius: 4px;
           overflow-x: auto;
@@ -218,6 +224,7 @@ class SnippetItem extends HTMLElement {
           font-family: 'Courier New', monospace;
           font-size: 13px;
           line-height: 1.5;
+          color: var(--text-primary, #333);
         }
         .variables-header {
           cursor: pointer;
@@ -240,7 +247,7 @@ class SnippetItem extends HTMLElement {
           display: none;
           margin-top: 0.5rem;
           padding: 0.75rem;
-          background-color: #f9f9f9;
+          background-color: var(--bg-zebra-even, #f9f9f9);
           border-radius: 4px;
         }
         .variables-section.expanded {
@@ -249,9 +256,9 @@ class SnippetItem extends HTMLElement {
         .variable-item {
           margin-bottom: 1rem;
           padding: 0.75rem;
-          background-color: #fff;
+          background-color: var(--bg-secondary, #fff);
           border-radius: 4px;
-          border: 1px solid #e0e0e0;
+          border: 1px solid var(--border-primary, #e0e0e0);
         }
         .variable-item:last-child {
           margin-bottom: 0;
@@ -276,14 +283,16 @@ class SnippetItem extends HTMLElement {
         .variable-input {
           flex: 1;
           padding: 0.5rem;
-          border: 1px solid #ddd;
+          border: 1px solid var(--border-primary, #ddd);
           border-radius: 4px;
           font-size: 13px;
           font-family: 'Courier New', monospace;
+          background-color: var(--bg-secondary, #fff);
+          color: var(--text-primary, #333);
         }
         .variable-input:focus {
           outline: none;
-          border-color: #2196f3;
+          border-color: var(--highlight-border, #2196f3);
         }
       </style>
       <div class="snippet-container">
@@ -291,6 +300,7 @@ class SnippetItem extends HTMLElement {
           <input type="checkbox" id="snippet-checkbox" ${isSelected ? 'checked' : ''}>
           <input type="text" class="snippet-title-input" id="description-input" value="${this.escapeAttr(snippet.description || '')}" placeholder="Enter description">
           <div class="snippet-actions">
+            <button class="btn btn-small" id="test-btn">Test</button>
             <button class="btn btn-small" id="copy-btn">Copy</button>
             <button class="btn btn-small btn-danger" id="delete-btn">Delete</button>
           </div>
@@ -329,7 +339,7 @@ class SnippetItem extends HTMLElement {
             </div>
             <div class="variables-section ${this.variablesExpanded ? 'expanded' : ''}" id="variables-section">
               ${this.variables.length === 0 ? `
-                <div style="padding: 1rem; color: #999; font-size: 13px; text-align: center;">
+                <div style="padding: 1rem; color: var(--text-secondary, #999); font-size: 13px; text-align: center;">
                   No variables found. Use &lt;varname&gt; syntax in command.
                 </div>
               ` : `
@@ -606,6 +616,10 @@ class SnippetItem extends HTMLElement {
     });
 
     // Attach action button listeners
+    this.shadowRoot.getElementById('test-btn').addEventListener('click', () => {
+      this.showTestDialog();
+    });
+
     this.shadowRoot.getElementById('copy-btn').addEventListener('click', () => {
       this.showCopyDialog();
     });
@@ -753,6 +767,150 @@ class SnippetItem extends HTMLElement {
       selection.removeAllRanges();
       selection.addRange(range);
     }
+  }
+
+  /**
+   * Show test dialog to preview interpolated command
+   */
+  showTestDialog() {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    // Create a copy of variables for testing
+    const testVariables = this.variables.map(v => ({
+      ...v,
+      testValue: v.isList ? v.listValues[0] || '' : v.value || '',
+      listValues: v.isList ? [...v.listValues] : []
+    }));
+
+    const updatePreview = () => {
+      // Interpolate command with test values
+      let interpolatedCommand = this.snippet.command || '';
+      testVariables.forEach(varObj => {
+        const regex = new RegExp(`<${varObj.name}(?:=[^>]*)?(?:=\\|[^>]*\\|)?>`, 'g');
+        interpolatedCommand = interpolatedCommand.replace(regex, varObj.testValue);
+      });
+
+      const preview = overlay.querySelector('#test-preview');
+      if (preview) {
+        preview.textContent = interpolatedCommand;
+      }
+    };
+
+    const renderDialog = () => {
+      // Interpolate command with test values
+      let interpolatedCommand = this.snippet.command || '';
+      testVariables.forEach(varObj => {
+        const regex = new RegExp(`<${varObj.name}(?:=[^>]*)?(?:=\\|[^>]*\\|)?>`, 'g');
+        interpolatedCommand = interpolatedCommand.replace(regex, varObj.testValue);
+      });
+
+      overlay.innerHTML = `
+        <div class="modal-dialog" style="max-width: 700px;">
+          <div class="modal-header">Test Snippet</div>
+          <div class="modal-body">
+            ${testVariables.length === 0 ? `
+              <div style="padding: 1rem; color: var(--text-secondary, #999); font-size: 13px; text-align: center;">
+                No variables to configure. The command will be used as-is.
+              </div>
+            ` : `
+              <div class="modal-field" style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary, #333);">Configure Variables:</label>
+                ${testVariables.map((varObj, idx) => `
+                  <div style="margin-bottom: 1rem; padding: 0.75rem; background-color: var(--bg-zebra-even, #f9f9f9); border-radius: 4px; border-left: 3px solid ${varObj.color};">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: ${varObj.color}; margin-bottom: 0.5rem;">
+                      &lt;${this.escapeHtml(varObj.name)}&gt;
+                    </label>
+                    ${varObj.isList ? `
+                      <select class="test-var-input" data-var-idx="${idx}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-primary, #ddd); border-radius: 4px; font-size: 13px; font-family: 'Courier New', monospace; background-color: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
+                        ${varObj.listValues.filter(v => v).map(val => `
+                          <option value="${this.escapeAttr(val)}" ${val === varObj.testValue ? 'selected' : ''}>${this.escapeHtml(val)}</option>
+                        `).join('')}
+                      </select>
+                    ` : `
+                      <input type="text" class="test-var-input" data-var-idx="${idx}" value="${this.escapeAttr(varObj.testValue)}" placeholder="Value" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-primary, #ddd); border-radius: 4px; font-size: 13px; font-family: 'Courier New', monospace; background-color: var(--bg-secondary, #fff); color: var(--text-primary, #333);">
+                    `}
+                  </div>
+                `).join('')}
+              </div>
+            `}
+            <div class="modal-field">
+              <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary, #333);">Preview:</label>
+              <pre id="test-preview" style="background-color: var(--bg-tertiary, #f5f5f5); padding: 1rem; border-radius: 4px; overflow-x: auto; margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; color: var(--text-primary, #333); border: 1px solid var(--border-primary, #ddd); white-space: pre-wrap; word-wrap: break-word;">${this.escapeHtml(interpolatedCommand)}</pre>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn" id="test-close-btn">Close</button>
+            <button class="btn btn-primary" id="test-copy-btn">Copy to Clipboard</button>
+          </div>
+        </div>
+      `;
+
+      // Attach input listeners
+      overlay.querySelectorAll('.test-var-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const varIdx = parseInt(e.target.dataset.varIdx);
+          testVariables[varIdx].testValue = e.target.value;
+          updatePreview();
+        });
+        input.addEventListener('change', (e) => {
+          const varIdx = parseInt(e.target.dataset.varIdx);
+          testVariables[varIdx].testValue = e.target.value;
+          updatePreview();
+        });
+      });
+
+      // Handle close
+      const closeBtn = overlay.querySelector('#test-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          document.body.removeChild(overlay);
+        });
+      }
+
+      // Handle copy
+      const copyBtn = overlay.querySelector('#test-copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          const preview = overlay.querySelector('#test-preview');
+          if (preview) {
+            try {
+              await navigator.clipboard.writeText(preview.textContent);
+              // Visual feedback
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = 'Copied!';
+              copyBtn.disabled = true;
+              setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.disabled = false;
+              }, 2000);
+            } catch (err) {
+              console.error('Failed to copy:', err);
+              alert('Failed to copy to clipboard');
+            }
+          }
+        });
+      }
+
+      // Handle click outside dialog to close
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+        }
+      });
+    };
+
+    document.body.appendChild(overlay);
+    renderDialog();
+
+    // Focus on first input
+    requestAnimationFrame(() => {
+      const firstInput = overlay.querySelector('.test-var-input');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    });
   }
 
   /**
