@@ -14,6 +14,20 @@ class SnippetList extends HTMLElement {
 
   connectedCallback() {
     this.render([]);
+
+    // Listen for variable color changes
+    this.colorChangeListener = () => {
+      // Re-render all snippet items to update variable colors
+      this.renderUI();
+    };
+    window.addEventListener('variable-colors-changed', this.colorChangeListener);
+  }
+
+  disconnectedCallback() {
+    // Clean up event listener
+    if (this.colorChangeListener) {
+      window.removeEventListener('variable-colors-changed', this.colorChangeListener);
+    }
   }
 
   render(snippets, resetFilters = true) {

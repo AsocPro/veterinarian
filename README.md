@@ -31,6 +31,7 @@ The killer feature - a powerful variable editor that understands pet's variable 
 - **Color-coded display**: Each variable gets a unique, consistent color
 - **Real-time editing**: Changes to variables instantly update the command
 - **List support**: Edit multi-value variables with +/- buttons
+- **Drag-and-drop reordering**: Reorder list values by dragging them with the drag handle (⋮⋮)
 - **Smart reconstruction**: First occurrence gets full syntax, subsequent uses stay simple
 - **Collapsible UI**: Keep your workspace clean
 
@@ -43,13 +44,16 @@ The killer feature - a powerful variable editor that understands pet's variable 
 ### UI/UX
 - **Clean sidebar**: File list with selection and close buttons
 - **Collapsible sidebar**: Toggle file list visibility for more workspace on smaller screens
+- **Resizable sidebar**: Drag the resize handle to adjust sidebar width
 - **Zebra striping**: Alternating colors for easy snippet scanning
 - **Persistent filters**: Search and tag filters maintained while editing
 - **No server required**: Runs entirely in your browser
 - **Web Components architecture**: Modular, maintainable code
-- **Dark mode**: Toggle between light and dark themes for comfortable editing
+- **Dark mode**: Toggle between light, dark, and auto themes
+- **Customizable settings**: Configure theme, sidebar width, and variable colors
 - **File renaming**: Rename files directly in the sidebar for better organization
 - **Mobile-friendly**: Responsive design works well on tablets and mobile devices
+- **Drag-and-drop reordering**: Intuitive reordering with visual feedback
 
 ## Getting Started
 
@@ -74,6 +78,7 @@ The killer feature - a powerful variable editor that understands pet's variable 
    - Click on any field to edit it
    - Expand the Variables section to manage command variables
    - Add/remove tags using the +/× buttons
+   - For list variables, drag the handle (⋮⋮) to reorder values
    - Click "Test" to preview how the command will look with variables filled in
 
 4. **Test your snippets**:
@@ -105,10 +110,13 @@ veterinarian/
 ├── components/
 │   ├── file-list.js       # Sidebar file list component
 │   ├── snippet-list.js    # Main snippet list with filtering
-│   └── snippet-item.js    # Individual snippet editor
+│   ├── snippet-item.js    # Individual snippet editor
+│   └── settings-dialog.js # Settings dialog component
 ├── utils/
 │   ├── toml-parser.js     # TOML parsing and stringification
-│   └── var-parser.js      # Variable extraction and command updating
+│   ├── var-parser.js      # Variable extraction and command updating
+│   ├── state-persistence.js # LocalStorage state management
+│   └── drag-reorder.js    # Reusable drag-and-drop utility
 └── docs/
     └── initial.md         # Project documentation and status
 ```
@@ -201,9 +209,12 @@ const appState = {
 - [x] Copy interpolated commands to clipboard
 - [x] Click variable in command to highlight in variables section
 - [x] Collapsible sidebar for mobile/small screens
+- [x] Drag-and-drop reordering for list variable values
+- [x] Settings dialog with theme, sidebar width, and variable color customization
+- [x] Drag-and-drop reordering for variable colors in settings
+- [x] Copy snippets between files
 
 ### Future Enhancements 🚀
-- [ ] Copy/move snippets between files
 - [ ] Keyboard shortcuts (Ctrl+S to save, etc.)
 - [ ] Drag-and-drop snippet reordering
 - [ ] Import/export individual snippets

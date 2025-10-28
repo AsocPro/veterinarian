@@ -279,6 +279,67 @@ class SnippetItem extends HTMLElement {
           display: flex;
           gap: 0.5rem;
           align-items: center;
+          padding: 0.25rem;
+          border-radius: 4px;
+          transition: all 0.05s ease;
+          position: relative;
+        }
+        .variable-value-row.draggable {
+          cursor: grab;
+        }
+        .variable-value-row.dragging {
+          opacity: 0.3;
+          cursor: grabbing;
+          transform: scale(0.9) rotate(2deg);
+          background-color: var(--bg-highlight-blue1);
+          border: 1px solid #2196f3;
+        }
+        .variable-value-row.drag-over::before {
+          content: '';
+          position: absolute;
+          top: -4px;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background-color: #2196f3;
+          border-radius: 2px;
+          box-shadow: 0 0 6px rgba(33, 150, 243, 0.6);
+          animation: pulse 0.6s ease-in-out infinite;
+        }
+        .variable-value-row.drag-over-bottom::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background-color: #2196f3;
+          border-radius: 2px;
+          box-shadow: 0 0 6px rgba(33, 150, 243, 0.6);
+          animation: pulse 0.6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scaleY(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scaleY(1.2);
+          }
+        }
+        .drag-handle {
+          cursor: grab;
+          color: var(--text-secondary);
+          font-size: 1rem;
+          line-height: 1;
+          user-select: none;
+          display: flex;
+          align-items: center;
+          padding: 0 0.25rem;
+        }
+        .drag-handle:active {
+          cursor: grabbing;
         }
         .variable-input {
           flex: 1;
@@ -348,10 +409,11 @@ class SnippetItem extends HTMLElement {
                     <div class="variable-name" style="background-color: ${varObj.color}20; border-left: 3px solid ${varObj.color};">
                       <span style="color: ${varObj.color}; font-weight: bold;">&lt;${this.escapeHtml(varObj.name)}&gt;</span>
                     </div>
-                    <div class="variable-values">
+                    <div class="variable-values" data-var-idx="${varIdx}">
                       ${varObj.isList ? `
                         ${varObj.listValues.map((val, valIdx) => `
-                          <div class="variable-value-row">
+                          <div class="variable-value-row draggable" draggable="true" data-var-idx="${varIdx}" data-val-idx="${valIdx}">
+                            <div class="drag-handle">⋮⋮</div>
                             <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="${valIdx}" value="${this.escapeAttr(val)}" placeholder="Value ${valIdx + 1}">
                             <button class="btn btn-small btn-danger" data-remove-val="${varIdx}-${valIdx}" title="Remove value">&minus;</button>
                           </div>
@@ -561,6 +623,9 @@ class SnippetItem extends HTMLElement {
           });
         });
       });
+
+      // Attach drag-and-drop reordering for list values
+      this.attachListValueDragListeners();
     }
 
     // Attach output section toggle
@@ -910,6 +975,43 @@ class SnippetItem extends HTMLElement {
       if (firstInput) {
         firstInput.focus();
       }
+    });
+  }
+
+  /**
+   * Attach drag-and-drop reordering for list values
+   */
+  attachListValueDragListeners() {
+    // For each variable that is a list, attach drag handlers
+    this.variables.forEach((varObj, varIdx) => {
+      if (!varObj.isList) return;
+
+      const valueRows = this.shadowRoot.querySelectorAll(`.variable-value-row.draggable[data-var-idx="${varIdx}"]`);
+      if (valueRows.length === 0) return;
+
+      window.DragReorder.attach(valueRows, (oldIndex, newIndex) => {
+        // Reorder the list values
+        const [removed] = varObj.listValues.splice(oldIndex, 1);
+        varObj.listValues.splice(newIndex, 0, removed);
+
+        // Update command with new order
+        this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+        this.lastCommand = this.snippet.command;
+
+        const cmdInput = this.shadowRoot.getElementById('command-input');
+        if (cmdInput) {
+          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
+        }
+
+        if (this.onEdit) {
+          this.onEdit(this.index, 'command', this.snippet.command);
+        }
+
+        // Re-render to update the UI with new order
+        this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+      }, {
+        dataIndexAttr: 'data-val-idx'
+      });
     });
   }
 

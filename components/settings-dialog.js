@@ -13,11 +13,11 @@ class SettingsDialog extends HTMLElement {
     this.render();
   }
 
-  loadSettings() {
-    const defaults = {
-      theme: localStorage.getItem('theme-mode') || 'auto',
-      sidebarWidth: parseInt(localStorage.getItem('sidebar-width')) || 250,
-      variableColors: JSON.parse(localStorage.getItem('variable-colors') || 'null') || [
+  getDefaultSettings() {
+    return {
+      theme: 'auto',
+      sidebarWidth: 250,
+      variableColors: [
         '#e91e63',
         '#9c27b0',
         '#3f51b5',
@@ -27,7 +27,15 @@ class SettingsDialog extends HTMLElement {
         '#f44336'
       ]
     };
-    return defaults;
+  }
+
+  loadSettings() {
+    const defaults = this.getDefaultSettings();
+    return {
+      theme: localStorage.getItem('theme-mode') || defaults.theme,
+      sidebarWidth: parseInt(localStorage.getItem('sidebar-width')) || defaults.sidebarWidth,
+      variableColors: JSON.parse(localStorage.getItem('variable-colors') || 'null') || defaults.variableColors
+    };
   }
 
   saveSettings() {
@@ -335,6 +343,7 @@ class SettingsDialog extends HTMLElement {
           <div class="modal-actions">
             <button class="btn" id="import-btn">Import Settings</button>
             <button class="btn" id="export-btn">Export Settings</button>
+            <button class="btn btn-danger" id="reset-btn">Reset to Defaults</button>
             <input type="file" id="import-file-input" accept=".json" style="display: none;">
             <div style="flex: 1;"></div>
             <button class="btn" id="cancel-btn">Cancel</button>
@@ -435,6 +444,14 @@ class SettingsDialog extends HTMLElement {
       }
       // Reset input so same file can be selected again
       e.target.value = '';
+    });
+
+    // Reset button
+    const resetBtn = this.shadowRoot.getElementById('reset-btn');
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+        this.resetToDefaults();
+      }
     });
 
     // Cancel button
@@ -544,95 +561,39 @@ class SettingsDialog extends HTMLElement {
 
   attachDragListeners() {
     const colorItems = this.shadowRoot.querySelectorAll('.color-item');
-    let draggedItem = null;
-    let draggedIndex = null;
 
-    colorItems.forEach(item => {
-      item.addEventListener('dragstart', (e) => {
-        draggedItem = item;
-        draggedIndex = parseInt(item.dataset.colorIdx);
-        item.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', item.innerHTML);
-      });
+    window.DragReorder.attach(colorItems, (oldIndex, newIndex) => {
+      // Reorder the colors array
+      const [removed] = this.settings.variableColors.splice(oldIndex, 1);
+      this.settings.variableColors.splice(newIndex, 0, removed);
 
-      item.addEventListener('dragend', (e) => {
-        item.classList.remove('dragging');
-        // Clear all drag-over indicators
-        this.shadowRoot.querySelectorAll('.color-item').forEach(el => {
-          el.classList.remove('drag-over', 'drag-over-bottom');
-        });
-      });
+      // Update the UI
+      this.updateColorsList();
 
-      item.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-
-        if (draggedItem === item) return;
-
-        // Clear all drag-over indicators
-        this.shadowRoot.querySelectorAll('.color-item').forEach(el => {
-          el.classList.remove('drag-over', 'drag-over-bottom');
-        });
-
-        // Determine if we should show indicator above or below
-        const rect = item.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        const mouseY = e.clientY;
-
-        if (mouseY < midpoint) {
-          item.classList.add('drag-over');
-        } else {
-          item.classList.add('drag-over-bottom');
-        }
-      });
-
-      item.addEventListener('dragleave', (e) => {
-        // Only remove if we're actually leaving this element
-        if (e.target === item) {
-          item.classList.remove('drag-over', 'drag-over-bottom');
-        }
-      });
-
-      item.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (draggedItem === item) return;
-
-        const targetIndex = parseInt(item.dataset.colorIdx);
-
-        // Determine if dropping above or below
-        const rect = item.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        const mouseY = e.clientY;
-        const dropBelow = mouseY >= midpoint;
-
-        // Calculate new position
-        let newIndex = targetIndex;
-        if (dropBelow) {
-          newIndex = targetIndex + 1;
-        }
-
-        // Adjust if dragging from before the target
-        if (draggedIndex < targetIndex) {
-          newIndex--;
-        }
-
-        // Reorder the colors array
-        const [removed] = this.settings.variableColors.splice(draggedIndex, 1);
-        this.settings.variableColors.splice(newIndex, 0, removed);
-
-        // Update the UI
-        this.updateColorsList();
-
-        // Update field label
-        const label = this.shadowRoot.querySelector('.modal-field:nth-child(3) .field-label');
-        if (label) {
-          label.textContent = `Variable Colors (${this.settings.variableColors.length})`;
-        }
-      });
+      // Update field label
+      const label = this.shadowRoot.querySelector('.modal-field:nth-child(3) .field-label');
+      if (label) {
+        label.textContent = `Variable Colors (${this.settings.variableColors.length})`;
+      }
+    }, {
+      dataIndexAttr: 'data-color-idx'
     });
+  }
+
+  resetToDefaults() {
+    // Load default settings
+    const defaults = this.getDefaultSettings();
+    this.settings = {
+      theme: defaults.theme,
+      sidebarWidth: defaults.sidebarWidth,
+      variableColors: [...defaults.variableColors] // Create a copy
+    };
+
+    // Re-render to show default settings
+    this.render();
+
+    // Show confirmation message
+    alert('Settings have been reset to defaults. Click "Save" to apply or "Cancel" to discard.');
   }
 
   exportSettings() {
