@@ -42,35 +42,29 @@ window.TomlParser = {
     }
 
     try {
-      // Use TOML.stringify if available, otherwise manual construction
-      if (TOML.stringify) {
-        return TOML.stringify(obj);
-      }
-
-      // Manual TOML construction for pet snippet format
       let toml = '';
 
       if (obj.snippets && Array.isArray(obj.snippets)) {
-        obj.snippets.forEach(snippet => {
-          toml += '[[snippets]]\n';
+        obj.snippets.forEach((snippet, index) => {
+          toml += '[[Snippets]]\n';
 
-          if (snippet.description) {
-            toml += `  description = ${JSON.stringify(snippet.description)}\n`;
+          // Description field (capitalized, always output)
+          toml += `  Description = ${JSON.stringify(snippet.description || '')}\n`;
+
+          // Output field (capitalized, always output)
+          toml += `  Output = ${JSON.stringify(snippet.output || '')}\n`;
+
+          // Tag field (capitalized, always output as array)
+          const tags = snippet.tag && Array.isArray(snippet.tag) ? snippet.tag : [];
+          toml += `  Tag = [${tags.map(t => JSON.stringify(t)).join(', ')}]\n`;
+
+          // command field (lowercase, always output)
+          toml += `  command = ${JSON.stringify(snippet.command || '')}\n`;
+
+          // Add blank line between snippets (but not after the last one)
+          if (index < obj.snippets.length - 1) {
+            toml += '\n';
           }
-
-          if (snippet.command) {
-            toml += `  command = ${JSON.stringify(snippet.command)}\n`;
-          }
-
-          if (snippet.tag && Array.isArray(snippet.tag) && snippet.tag.length > 0) {
-            toml += `  tag = [${snippet.tag.map(t => JSON.stringify(t)).join(', ')}]\n`;
-          }
-
-          if (snippet.output) {
-            toml += `  output = ${JSON.stringify(snippet.output)}\n`;
-          }
-
-          toml += '\n';
         });
       }
 

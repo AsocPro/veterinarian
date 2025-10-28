@@ -229,13 +229,49 @@ class SnippetList extends HTMLElement {
     });
 
     this.shadowRoot.getElementById('copy-selected').addEventListener('click', () => {
-      console.log('Copy selected clicked (stub)');
-      alert('Copy selected functionality will be implemented in a later phase');
+      if (this.selectedIndices.size === 0) {
+        alert('No snippets selected');
+        return;
+      }
+
+      // Get selected snippets
+      const selectedSnippets = Array.from(this.selectedIndices)
+        .map(idx => this.filteredSnippets[idx]);
+
+      this.showCopyDialog(selectedSnippets);
     });
 
     this.shadowRoot.getElementById('delete-selected').addEventListener('click', () => {
-      console.log('Delete selected clicked (stub)');
-      alert('Delete selected functionality will be implemented in a later phase');
+      if (this.selectedIndices.size === 0) {
+        alert('No snippets selected');
+        return;
+      }
+
+      const count = this.selectedIndices.size;
+      if (!confirm(`Delete ${count} selected snippet${count > 1 ? 's' : ''}?`)) {
+        return;
+      }
+
+      // Get snippets to delete from filtered list
+      const snippetsToDelete = Array.from(this.selectedIndices)
+        .map(idx => this.filteredSnippets[idx]);
+
+      // Remove them from allSnippets array
+      snippetsToDelete.forEach(snippet => {
+        const allIndex = this.allSnippets.indexOf(snippet);
+        if (allIndex > -1) {
+          this.allSnippets.splice(allIndex, 1);
+        }
+      });
+
+      // Clear selection
+      this.selectedIndices.clear();
+
+      // Update global state
+      window.updateSnippetsInFile(this.allSnippets);
+
+      // Re-render without resetting filters
+      this.render(this.allSnippets, false);
     });
 
     const tagFilterBtn = this.shadowRoot.getElementById('tag-filter-btn');
@@ -349,6 +385,88 @@ class SnippetList extends HTMLElement {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Show copy dialog to select destination file for multiple snippets
+   */
+  showCopyDialog(snippets) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    const openFiles = window.getOpenFiles ? window.getOpenFiles() : [];
+    const count = snippets.length;
+
+    overlay.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-header">Copy ${count} Snippet${count > 1 ? 's' : ''} To</div>
+        <div class="modal-body">
+          <div class="modal-field">
+            <label for="copy-target-file">Select destination file:</label>
+            <select id="copy-target-file">
+              <option value="new">+ Create New File</option>
+              ${openFiles.map((file, idx) => `
+                <option value="${idx}">${this.escapeHtml(file.name)}${file.dirty ? ' *' : ''}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="copy-cancel-btn">Cancel</button>
+          <button class="btn btn-primary" id="copy-confirm-btn">Copy</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Handle cancel
+    overlay.querySelector('#copy-cancel-btn').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+
+    // Handle copy
+    overlay.querySelector('#copy-confirm-btn').addEventListener('click', () => {
+      const select = overlay.querySelector('#copy-target-file');
+      const value = select.value;
+
+      if (value === 'new') {
+        // Create new file first
+        if (window.createNewFile) {
+          window.createNewFile();
+          // Get the new file's index (last file)
+          const newFileIndex = (window.getOpenFiles ? window.getOpenFiles() : []).length - 1;
+          if (newFileIndex >= 0 && window.copySnippetsToFile) {
+            window.copySnippetsToFile(snippets, newFileIndex);
+          }
+        }
+      } else {
+        // Copy to existing file
+        const targetIndex = parseInt(value);
+        if (!isNaN(targetIndex) && window.copySnippetsToFile) {
+          window.copySnippetsToFile(snippets, targetIndex);
+        }
+      }
+
+      // Clear selection after copying
+      this.selectedIndices.clear();
+      this.renderUI();
+
+      document.body.removeChild(overlay);
+    });
+
+    // Handle click outside dialog to close
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
+
+    // Focus on select
+    requestAnimationFrame(() => {
+      overlay.querySelector('#copy-target-file').focus();
+    });
   }
 }
 

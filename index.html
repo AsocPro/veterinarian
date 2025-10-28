@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/fuse.js@6.6.2/dist/fuse.basic.min.js"></script>
   <script src="utils/toml-parser.js"></script>
   <script src="utils/var-parser.js"></script>
+  <script src="utils/state-persistence.js"></script>
   <script src="components/file-list.js"></script>
   <script src="components/snippet-list.js"></script>
   <script src="components/snippet-item.js"></script>
@@ -37,12 +38,27 @@
       selectedFileIndex: -1
     };
 
+    // Load saved state from localStorage on app initialization
+    function initializeApp() {
+      const savedState = window.StatePersistence.loadState();
+      if (savedState) {
+        appState.openFiles = savedState.openFiles;
+        appState.selectedFileIndex = savedState.selectedFileIndex;
+
+        // Update UI to reflect loaded state
+        updateFileList();
+        updateHeader();
+        updateSnippetList();
+      }
+    }
+
     // Global helper functions
     window.markFileDirty = function() {
       if (appState.selectedFileIndex >= 0 && appState.selectedFileIndex < appState.openFiles.length) {
         const file = appState.openFiles[appState.selectedFileIndex];
         file.dirty = true;
         updateFileList();
+        window.StatePersistence.saveState(appState);
       }
     };
 
@@ -53,6 +69,7 @@
         file.dirty = true;
         updateFileList();
         updateSnippetList();
+        window.StatePersistence.saveState(appState);
       }
     };
 
@@ -85,6 +102,9 @@
           if (appState.selectedFileIndex === -1) {
             selectFile(appState.openFiles.length - 1);
           }
+
+          // Save state after adding file
+          window.StatePersistence.saveState(appState);
         };
         reader.readAsText(file);
       });
@@ -120,6 +140,7 @@
       appState.openFiles.push(fileObj);
       updateFileList();
       selectFile(appState.openFiles.length - 1);
+      window.StatePersistence.saveState(appState);
     }
 
     function selectFile(index) {
@@ -127,6 +148,7 @@
       updateFileList();
       updateHeader();
       updateSnippetList();
+      window.StatePersistence.saveState(appState);
     }
 
     function closeFile(index) {
@@ -140,6 +162,7 @@
       updateFileList();
       updateHeader();
       updateSnippetList();
+      window.StatePersistence.saveState(appState);
     }
 
     function updateFileList() {
@@ -190,10 +213,62 @@
         // Clear dirty flag
         file.dirty = false;
         updateFileList();
+        window.StatePersistence.saveState(appState);
       } catch (err) {
         console.error('Failed to save file:', err);
         alert(`Failed to save ${file.name}: ${err.message}`);
       }
+    }
+
+    // Copy snippet to another file
+    function copySnippetToFile(snippet, targetFileIndex) {
+      if (targetFileIndex < 0 || targetFileIndex >= appState.openFiles.length) return;
+
+      const targetFile = appState.openFiles[targetFileIndex];
+      if (!targetFile.parsed.snippets) {
+        targetFile.parsed.snippets = [];
+      }
+
+      // Create a deep copy of the snippet
+      const snippetCopy = JSON.parse(JSON.stringify(snippet));
+      targetFile.parsed.snippets.push(snippetCopy);
+      targetFile.dirty = true;
+
+      updateFileList();
+      // If copying to current file, update snippet list
+      if (targetFileIndex === appState.selectedFileIndex) {
+        updateSnippetList();
+      }
+      window.StatePersistence.saveState(appState);
+    }
+
+    // Copy multiple snippets to another file
+    function copySnippetsToFile(snippets, targetFileIndex) {
+      if (targetFileIndex < 0 || targetFileIndex >= appState.openFiles.length) return;
+
+      const targetFile = appState.openFiles[targetFileIndex];
+      if (!targetFile.parsed.snippets) {
+        targetFile.parsed.snippets = [];
+      }
+
+      // Create deep copies of all snippets
+      snippets.forEach(snippet => {
+        const snippetCopy = JSON.parse(JSON.stringify(snippet));
+        targetFile.parsed.snippets.push(snippetCopy);
+      });
+      targetFile.dirty = true;
+
+      updateFileList();
+      // If copying to current file, update snippet list
+      if (targetFileIndex === appState.selectedFileIndex) {
+        updateSnippetList();
+      }
+      window.StatePersistence.saveState(appState);
+    }
+
+    // Get open files for copy dialog
+    function getOpenFiles() {
+      return appState.openFiles;
     }
 
     // Expose functions to window for component access
@@ -201,9 +276,15 @@
     window.selectFile = selectFile;
     window.closeFile = closeFile;
     window.saveFile = saveFile;
+    window.copySnippetToFile = copySnippetToFile;
+    window.copySnippetsToFile = copySnippetsToFile;
+    window.getOpenFiles = getOpenFiles;
 
     // Setup file input listener
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
+
+    // Initialize app and load saved state
+    initializeApp();
   </script>
 </body>
 </html>

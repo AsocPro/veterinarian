@@ -607,12 +607,7 @@ class SnippetItem extends HTMLElement {
 
     // Attach action button listeners
     this.shadowRoot.getElementById('copy-btn').addEventListener('click', () => {
-      if (this.onCopy) {
-        this.onCopy(this.index);
-      } else {
-        console.log('Copy snippet clicked (stub)');
-        alert('Copy snippet functionality will be implemented in a later phase');
-      }
+      this.showCopyDialog();
     });
 
     this.shadowRoot.getElementById('delete-btn').addEventListener('click', () => {
@@ -758,6 +753,83 @@ class SnippetItem extends HTMLElement {
       selection.removeAllRanges();
       selection.addRange(range);
     }
+  }
+
+  /**
+   * Show copy dialog to select destination file
+   */
+  showCopyDialog() {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    const openFiles = window.getOpenFiles ? window.getOpenFiles() : [];
+
+    overlay.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-header">Copy Snippet To</div>
+        <div class="modal-body">
+          <div class="modal-field">
+            <label for="copy-target-file">Select destination file:</label>
+            <select id="copy-target-file">
+              <option value="new">+ Create New File</option>
+              ${openFiles.map((file, idx) => `
+                <option value="${idx}">${this.escapeHtml(file.name)}${file.dirty ? ' *' : ''}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="copy-cancel-btn">Cancel</button>
+          <button class="btn btn-primary" id="copy-confirm-btn">Copy</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Handle cancel
+    overlay.querySelector('#copy-cancel-btn').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+
+    // Handle copy
+    overlay.querySelector('#copy-confirm-btn').addEventListener('click', () => {
+      const select = overlay.querySelector('#copy-target-file');
+      const value = select.value;
+
+      if (value === 'new') {
+        // Create new file first
+        if (window.createNewFile) {
+          window.createNewFile();
+          // Get the new file's index (last file)
+          const newFileIndex = (window.getOpenFiles ? window.getOpenFiles() : []).length - 1;
+          if (newFileIndex >= 0 && window.copySnippetToFile) {
+            window.copySnippetToFile(this.snippet, newFileIndex);
+          }
+        }
+      } else {
+        // Copy to existing file
+        const targetIndex = parseInt(value);
+        if (!isNaN(targetIndex) && window.copySnippetToFile) {
+          window.copySnippetToFile(this.snippet, targetIndex);
+        }
+      }
+
+      document.body.removeChild(overlay);
+    });
+
+    // Handle click outside dialog to close
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
+
+    // Focus on select
+    requestAnimationFrame(() => {
+      overlay.querySelector('#copy-target-file').focus();
+    });
   }
 }
 

@@ -2,6 +2,10 @@
 
 > Like a pet doctor, but for your [pet](https://github.com/knqyf263/pet) snippet files.
 
+<div align="center">
+<img src="veterinarian.png" width="350">
+</div>
+
 Veterinarian is a browser-based editor for **pet** CLI snippet TOML files. Edit, manage, and organize your command-line snippets with an intuitive interface featuring advanced variable management, tag filtering, and fuzzy search.
 
 ## Features
