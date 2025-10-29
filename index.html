@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pet Snippet Editor</title>
+  <title>Veterinarian</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
@@ -32,7 +32,7 @@
           <button id="sidebar-toggle" class="btn-icon" title="Toggle file list">
             <span class="sidebar-toggle-icon">☰</span>
           </button>
-          <h1 id="file-name-display">Pet Snippet Editor</h1>
+          <h1 id="file-name-display">Veterinarian</h1>
         </div>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div class="theme-toggle">
@@ -276,7 +276,7 @@
       if (appState.selectedFileIndex >= 0 && appState.selectedFileIndex < appState.openFiles.length) {
         headerElement.textContent = appState.openFiles[appState.selectedFileIndex].name;
       } else {
-        headerElement.textContent = 'Pet Snippet Editor';
+        headerElement.textContent = 'Veterinarian';
       }
     }
 
