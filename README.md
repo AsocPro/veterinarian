@@ -37,7 +37,7 @@ Veterinarian is a browser-based TOML editor specifically designed for [pet](http
 
 ## ✨ Key Features
 
-### 🎨 Advanced Variable Management (The Killer Feature!)
+### 🎨 Advanced Variable Management
 
 <!-- Screenshot: Variables section expanded showing color-coded variables -->
 ![Variable Management](screenshots/variables-section.png)
