@@ -25,6 +25,31 @@ class FileList extends HTMLElement {
           gap: var(--spacing-sm, 0.5rem);
           background-color: var(--bg-secondary, #fff);
         }
+        .file-controls-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: var(--spacing-sm, 0.5rem);
+        }
+        .file-controls-title {
+          font-weight: 600;
+          font-size: 14px;
+          color: var(--text-primary, #2c3e50);
+        }
+        .close-sidebar-btn {
+          padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+          font-size: 12px;
+          background: transparent;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          color: var(--text-secondary, #666);
+          cursor: pointer;
+          border-radius: var(--radius-sm, 4px);
+          transition: all var(--transition-base, 0.2s ease);
+        }
+        .close-sidebar-btn:hover {
+          background-color: var(--bg-tertiary, #f1f3f5);
+          border-color: var(--text-secondary, #666);
+        }
         .file-list {
           padding: var(--spacing-sm, 0.5rem);
         }
@@ -84,6 +109,10 @@ class FileList extends HTMLElement {
         }
       </style>
       <div class="file-controls">
+        <div class="file-controls-header">
+          <span class="file-controls-title">Files</span>
+          <button class="close-sidebar-btn" id="close-sidebar-btn">Hide ←</button>
+        </div>
         <button class="btn btn-primary" id="upload-btn">Upload TOML</button>
         <button class="btn" id="new-btn">New File</button>
       </div>
@@ -103,6 +132,13 @@ class FileList extends HTMLElement {
     `;
 
     // Attach event listeners
+    this.shadowRoot.getElementById('close-sidebar-btn').addEventListener('click', () => {
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      if (toggleBtn) {
+        toggleBtn.click();
+      }
+    });
+
     this.shadowRoot.getElementById('upload-btn').addEventListener('click', () => {
       document.getElementById('file-input').click();
     });
