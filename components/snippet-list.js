@@ -410,6 +410,7 @@ class SnippetList extends HTMLElement {
           // Mark file as dirty
           window.markFileDirty();
           // If tags were modified, re-render to update tag dropdown
+          // But NOT when editing command (which happens during variable editing)
           if (field === 'tag') {
             this.renderUI();
           }

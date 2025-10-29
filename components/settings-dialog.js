@@ -193,11 +193,11 @@ class SettingsDialog extends HTMLElement {
           margin-bottom: 0;
         }
         .color-item.dragging {
-          opacity: 0.3;
+          opacity: 0.4;
           cursor: grabbing;
-          transform: scale(0.9) rotate(2deg);
           background-color: var(--bg-highlight-blue1);
           border-color: #2196f3;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         .color-item.drag-over::before {
           content: '';
@@ -326,7 +326,7 @@ class SettingsDialog extends HTMLElement {
               <label class="field-label">Variable Colors (${this.settings.variableColors.length})</label>
               <div class="colors-list" id="colors-list">
                 ${this.settings.variableColors.map((color, idx) => `
-                  <div class="color-item" draggable="true" data-color-idx="${idx}">
+                  <div class="color-item" data-color-idx="${idx}">
                     <div class="drag-handle">⋮⋮</div>
                     <div class="color-preview" style="background-color: ${color};"></div>
                     <div class="color-input-wrapper">
@@ -360,7 +360,7 @@ class SettingsDialog extends HTMLElement {
     const colorsList = this.shadowRoot.getElementById('colors-list');
     if (colorsList) {
       colorsList.innerHTML = this.settings.variableColors.map((color, idx) => `
-        <div class="color-item" draggable="true" data-color-idx="${idx}">
+        <div class="color-item" data-color-idx="${idx}">
           <div class="drag-handle">⋮⋮</div>
           <div class="color-preview" style="background-color: ${color};"></div>
           <div class="color-input-wrapper">
@@ -576,6 +576,7 @@ class SettingsDialog extends HTMLElement {
         label.textContent = `Variable Colors (${this.settings.variableColors.length})`;
       }
     }, {
+      dragHandleSelector: '.drag-handle',
       dataIndexAttr: 'data-color-idx'
     });
   }

@@ -362,8 +362,9 @@ class SnippetItem extends HTMLElement {
           align-items: center;
           padding: 0.375rem;
           border-radius: 6px;
-          transition: all 0.2s ease;
+          transition: background-color 0.2s ease;
           position: relative;
+          min-height: 48px;
         }
         .variable-value-row:hover {
           background-color: var(--bg-tertiary, #f1f3f5);
@@ -377,6 +378,8 @@ class SnippetItem extends HTMLElement {
           background-color: var(--bg-highlight-blue1);
           border: 2px solid var(--accent-primary, #339af0);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+          /* Keep the space occupied while dragging */
+          visibility: visible;
         }
         .variable-value-row.drag-over::before {
           content: '';
@@ -507,7 +510,7 @@ class SnippetItem extends HTMLElement {
                     <div class="variable-values" data-var-idx="${varIdx}">
                       ${varObj.isList ? `
                         ${varObj.listValues.map((val, valIdx) => `
-                          <div class="variable-value-row draggable" draggable="true" data-var-idx="${varIdx}" data-val-idx="${valIdx}">
+                          <div class="variable-value-row draggable" data-var-idx="${varIdx}" data-val-idx="${valIdx}">
                             <div class="drag-handle">⋮⋮</div>
                             <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="${valIdx}" value="${this.escapeAttr(val)}" placeholder="Value ${valIdx + 1}">
                             <button class="btn btn-small btn-danger" data-remove-val="${varIdx}-${valIdx}" title="Remove value">&minus;</button>
@@ -618,109 +621,8 @@ class SnippetItem extends HTMLElement {
         this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
       });
 
-      // Variable value inputs
-      this.shadowRoot.querySelectorAll('.variable-input').forEach(input => {
-        input.addEventListener('input', (e) => {
-          const varIdx = parseInt(e.target.dataset.varIdx);
-          const valIdx = parseInt(e.target.dataset.valIdx);
-          const varObj = this.variables[varIdx];
-
-          if (varObj.isList) {
-            varObj.listValues[valIdx] = e.target.value;
-          } else {
-            varObj.value = e.target.value;
-          }
-
-          // Update command with new values
-          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
-
-          if (this.onEdit) {
-            this.onEdit(this.index, 'command', this.snippet.command);
-          }
-        });
-      });
-
-      // Add value button (for lists)
-      this.shadowRoot.querySelectorAll('[data-add-val]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const varIdx = parseInt(e.target.dataset.addVal);
-          const newValIdx = this.variables[varIdx].listValues.length; // Index of the new field
-          this.variables[varIdx].listValues.push('');
-          // Update command with new list structure
-          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-          this.lastCommand = this.snippet.command;
-          if (this.onEdit) {
-            this.onEdit(this.index, 'command', this.snippet.command);
-          }
-          this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
-
-          // Focus the newly added input field
-          requestAnimationFrame(() => {
-            const newInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="${newValIdx}"]`);
-            if (newInput) {
-              newInput.focus();
-            }
-          });
-        });
-      });
-
-      // Remove value button (for lists)
-      this.shadowRoot.querySelectorAll('[data-remove-val]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const [varIdx, valIdx] = e.target.dataset.removeVal.split('-').map(Number);
-          const varObj = this.variables[varIdx];
-
-          if (varObj.listValues.length === 1) {
-            // Last item: convert back to single value and clear it
-            varObj.isList = false;
-            varObj.value = '';
-            varObj.listValues = [''];
-          } else if (varObj.listValues.length > 1) {
-            // Multiple items: just remove this one
-            varObj.listValues.splice(valIdx, 1);
-          }
-
-          // Update command
-          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-          this.lastCommand = this.snippet.command;
-          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
-          if (this.onEdit) {
-            this.onEdit(this.index, 'command', this.snippet.command);
-          }
-          this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
-        });
-      });
-
-      // Make list button
-      this.shadowRoot.querySelectorAll('[data-make-list]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const varIdx = parseInt(e.target.dataset.makeList);
-          const varObj = this.variables[varIdx];
-          varObj.isList = true;
-          varObj.listValues = [varObj.value || '', ''];
-          varObj.value = '';
-          // Update command
-          this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
-          this.lastCommand = this.snippet.command;
-          cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
-          if (this.onEdit) {
-            this.onEdit(this.index, 'command', this.snippet.command);
-          }
-          this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
-
-          // Focus the second field (the empty one) after converting to list
-          requestAnimationFrame(() => {
-            const secondInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="1"]`);
-            if (secondInput) {
-              secondInput.focus();
-            }
-          });
-        });
-      });
-
-      // Attach drag-and-drop reordering for list values
-      this.attachListValueDragListeners();
+      // Attach all variables section event listeners
+      this.attachVariablesSectionListeners();
     }
 
     // Attach output section toggle
@@ -1104,6 +1006,173 @@ class SnippetItem extends HTMLElement {
   }
 
   /**
+   * Update just the variables section without full re-render
+   */
+  updateVariablesSection() {
+    const variablesSection = this.shadowRoot.getElementById('variables-section');
+    if (!variablesSection) return;
+
+    variablesSection.innerHTML = `
+      ${this.variables.length === 0 ? `
+        <div style="padding: 1rem; color: var(--text-secondary, #999); font-size: 13px; text-align: center;">
+          No variables found. Use &lt;varname&gt; syntax in command.
+        </div>
+      ` : `
+        ${this.variables.map((varObj, varIdx) => `
+          <div class="variable-item">
+            <div class="variable-name" style="background-color: ${varObj.color}20; border-left: 3px solid ${varObj.color};">
+              <span style="color: ${varObj.color}; font-weight: bold;">&lt;${this.escapeHtml(varObj.name)}&gt;</span>
+            </div>
+            <div class="variable-values" data-var-idx="${varIdx}">
+              ${varObj.isList ? `
+                ${varObj.listValues.map((val, valIdx) => `
+                  <div class="variable-value-row draggable" data-var-idx="${varIdx}" data-val-idx="${valIdx}">
+                    <div class="drag-handle">⋮⋮</div>
+                    <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="${valIdx}" value="${this.escapeAttr(val)}" placeholder="Value ${valIdx + 1}">
+                    <button class="btn btn-small btn-danger" data-remove-val="${varIdx}-${valIdx}" title="Remove value">&minus;</button>
+                  </div>
+                `).join('')}
+                <button class="btn btn-small" data-add-val="${varIdx}">+ Add Value</button>
+              ` : `
+                <div class="variable-value-row">
+                  <input type="text" class="variable-input" data-var-idx="${varIdx}" data-val-idx="0" value="${this.escapeAttr(varObj.value)}" placeholder="Value">
+                  <button class="btn btn-small" data-make-list="${varIdx}">Make List</button>
+                </div>
+              `}
+            </div>
+          </div>
+        `).join('')}
+      `}
+    `;
+
+    // Re-attach event listeners for the variables section
+    this.attachVariablesSectionListeners();
+  }
+
+  /**
+   * Attach event listeners specifically for the variables section
+   */
+  attachVariablesSectionListeners() {
+    const cmdInput = this.shadowRoot.getElementById('command-input');
+
+    // Variable value inputs
+    this.shadowRoot.querySelectorAll('.variable-input').forEach(input => {
+      // Clear any existing timeout for this input
+      let updateTimeout;
+
+      input.addEventListener('input', (e) => {
+        const varIdx = parseInt(e.target.dataset.varIdx);
+        const valIdx = parseInt(e.target.dataset.valIdx);
+        const varObj = this.variables[varIdx];
+
+        if (varObj.isList) {
+          varObj.listValues[valIdx] = e.target.value;
+        } else {
+          varObj.value = e.target.value;
+        }
+
+        // Debounce command updates to avoid interfering with typing
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+          // Update command with new values
+          const newCommand = window.VarParser.updateCommand(this.snippet.command, this.variables);
+
+          // Only update if command actually changed
+          if (newCommand !== this.snippet.command) {
+            this.snippet.command = newCommand;
+            cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
+
+            if (this.onEdit) {
+              this.onEdit(this.index, 'command', this.snippet.command);
+            }
+          }
+        }, 300); // Wait 300ms after user stops typing
+      });
+    });
+
+    // Add value button (for lists)
+    this.shadowRoot.querySelectorAll('[data-add-val]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const varIdx = parseInt(e.target.dataset.addVal);
+        const newValIdx = this.variables[varIdx].listValues.length; // Index of the new field
+        this.variables[varIdx].listValues.push('');
+        // Update command with new list structure
+        this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+        this.lastCommand = this.snippet.command;
+        if (this.onEdit) {
+          this.onEdit(this.index, 'command', this.snippet.command);
+        }
+        this.updateVariablesSection();
+
+        // Focus the newly added input field
+        requestAnimationFrame(() => {
+          const newInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="${newValIdx}"]`);
+          if (newInput) {
+            newInput.focus();
+          }
+        });
+      });
+    });
+
+    // Remove value button (for lists)
+    this.shadowRoot.querySelectorAll('[data-remove-val]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const [varIdx, valIdx] = e.target.dataset.removeVal.split('-').map(Number);
+        const varObj = this.variables[varIdx];
+
+        if (varObj.listValues.length === 1) {
+          // Last item: convert back to single value and clear it
+          varObj.isList = false;
+          varObj.value = '';
+          varObj.listValues = [''];
+        } else if (varObj.listValues.length > 1) {
+          // Multiple items: just remove this one
+          varObj.listValues.splice(valIdx, 1);
+        }
+
+        // Update command
+        this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+        this.lastCommand = this.snippet.command;
+        cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
+        if (this.onEdit) {
+          this.onEdit(this.index, 'command', this.snippet.command);
+        }
+        this.updateVariablesSection();
+      });
+    });
+
+    // Make list button
+    this.shadowRoot.querySelectorAll('[data-make-list]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const varIdx = parseInt(e.target.dataset.makeList);
+        const varObj = this.variables[varIdx];
+        varObj.isList = true;
+        varObj.listValues = [varObj.value || '', ''];
+        varObj.value = '';
+        // Update command
+        this.snippet.command = window.VarParser.updateCommand(this.snippet.command, this.variables);
+        this.lastCommand = this.snippet.command;
+        cmdInput.innerHTML = this.renderHighlightedCommand(this.snippet.command);
+        if (this.onEdit) {
+          this.onEdit(this.index, 'command', this.snippet.command);
+        }
+        this.updateVariablesSection();
+
+        // Focus the second field (the empty one) after converting to list
+        requestAnimationFrame(() => {
+          const secondInput = this.shadowRoot.querySelector(`.variable-input[data-var-idx="${varIdx}"][data-val-idx="1"]`);
+          if (secondInput) {
+            secondInput.focus();
+          }
+        });
+      });
+    });
+
+    // Attach drag-and-drop reordering for list values
+    this.attachListValueDragListeners();
+  }
+
+  /**
    * Attach drag-and-drop reordering for list values
    */
   attachListValueDragListeners() {
@@ -1132,9 +1201,10 @@ class SnippetItem extends HTMLElement {
           this.onEdit(this.index, 'command', this.snippet.command);
         }
 
-        // Re-render to update the UI with new order
-        this.render(this.snippet, this.index, this.shadowRoot.querySelector('#snippet-checkbox')?.checked || false, this.onCheckChange, this.onEdit, this.onDelete, this.onCopy);
+        // Update just the variables section instead of full re-render
+        this.updateVariablesSection();
       }, {
+        dragHandleSelector: '.drag-handle',
         dataIndexAttr: 'data-val-idx'
       });
     });

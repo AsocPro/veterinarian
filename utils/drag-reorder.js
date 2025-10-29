@@ -17,26 +17,56 @@ window.DragReorder = {
     let draggedIndex = null;
 
     items.forEach(item => {
+      // Initially set item as NOT draggable
+      item.setAttribute('draggable', 'false');
+
+      let isDragFromHandle = false;
+
       // If drag handle selector provided, only make handle draggable
       if (dragHandleSelector) {
         const handle = item.querySelector(dragHandleSelector);
         if (handle) {
-          handle.setAttribute('draggable', 'true');
           handle.style.cursor = 'grab';
 
-          handle.addEventListener('mousedown', () => {
+          // Only enable dragging when mouse is down on the handle
+          handle.addEventListener('mousedown', (e) => {
+            isDragFromHandle = true;
             item.setAttribute('draggable', 'true');
+            handle.style.cursor = 'grabbing';
           });
 
-          handle.addEventListener('mouseup', () => {
+          // Disable dragging when mouse is released anywhere
+          const disableDrag = () => {
+            isDragFromHandle = false;
             item.setAttribute('draggable', 'false');
-          });
+            handle.style.cursor = 'grab';
+          };
+
+          handle.addEventListener('mouseup', disableDrag);
+          document.addEventListener('mouseup', disableDrag);
         }
       }
 
       item.addEventListener('dragstart', (e) => {
+        // If we have a handle selector, only allow drag if it was initiated from the handle
+        if (dragHandleSelector && !isDragFromHandle) {
+          e.preventDefault();
+          return false;
+        }
+
+        // Double check that dragging is allowed
+        if (item.getAttribute('draggable') !== 'true') {
+          e.preventDefault();
+          return false;
+        }
+
         draggedItem = item;
         draggedIndex = parseInt(item.getAttribute(dataIndexAttr));
+
+        // Save the current height to prevent layout shift
+        const rect = item.getBoundingClientRect();
+        item.style.height = rect.height + 'px';
+
         item.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/html', item.innerHTML);
@@ -44,6 +74,8 @@ window.DragReorder = {
 
       item.addEventListener('dragend', (e) => {
         item.classList.remove('dragging');
+        // Reset the height
+        item.style.height = '';
         // Clear all drag-over indicators
         items.forEach(el => {
           el.classList.remove('drag-over', 'drag-over-bottom');
