@@ -5,7 +5,7 @@
 (function() {
   'use strict';
 
-  const STORAGE_KEY = 'petSnippetEditorState';
+  const STORAGE_KEY = 'veterinarian-state';
 
   /**
    * Serialize and save application state to localStorage

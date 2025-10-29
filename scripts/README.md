@@ -56,12 +56,22 @@ Note: This requires installing system dependencies for Chromium, which varies by
 
 ## What it generates
 
-The script creates the following screenshots in the `screenshots/` directory:
+The script creates the following media files in the `screenshots/` directory:
 
 1. **main-interface.png** - Full app view in light mode with sample snippets
 2. **variables-section.png** - Close-up of a snippet with variables section expanded
 3. **test-dialog.png** - The test dialog with variable inputs filled in
 4. **dark-mode.png** - Full app view in dark mode
+5. **variable-editing-demo.gif** - Animated demo of editing variables and watching command update in real-time
+
+### Requirements for GIF generation
+
+The animated GIF requires **ffmpeg** to be installed:
+- **macOS**: `brew install ffmpeg`
+- **Ubuntu/Debian**: `sudo apt-get install ffmpeg`
+- **Fedora**: `sudo dnf install ffmpeg`
+
+If ffmpeg is not available, the script will save the video file and provide manual conversion instructions.
 
 ## Customizing
 
@@ -80,24 +90,22 @@ viewport: { width: 1600, height: 900 }
 
 Add additional screenshot steps in the `takeScreenshots()` function. See the existing examples for patterns.
 
-## Creating the animated GIF
+## How the GIF is created
 
-For the variable editing demo GIF, you'll need to record it manually or use Playwright's video recording:
+The script automatically:
+1. Records video of variable editing actions using Playwright
+2. Types in variable fields slowly to show real-time command updates
+3. Selects from dropdown lists
+4. Converts the video to GIF using ffmpeg with optimized palette
 
-1. Enable video recording in the script:
-   ```javascript
-   const context = await browser.newContext({
-     viewport: { width: 1600, height: 900 },
-     recordVideo: { dir: 'videos/' }
-   });
-   ```
-
-2. Perform the actions you want to record
-
-3. Convert the video to GIF using ffmpeg:
-   ```bash
-   ffmpeg -i videos/video.webm -vf "fps=10,scale=1600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 screenshots/variable-editing-demo.gif
-   ```
+The demo shows:
+- Focused view of a single snippet (1000x1000 viewport)
+- Using the "find" command snippet with path and filename variables
+- Typing "/home/user/projects" in the `path` field (250ms per character)
+- Typing "*.js" in the `filename` field (250ms per character)
+- Command updating in real-time as you type
+- Pauses between actions to clearly show each change
+- 15 FPS for smooth animation
 
 ## Scripts Overview
 
