@@ -182,8 +182,12 @@ veterinarian/
 │   ├── var-parser.js      # Variable extraction and command updating
 │   ├── state-persistence.js # LocalStorage state management
 │   └── drag-reorder.js    # Reusable drag-and-drop utility
-└── docs/
-    └── initial.md         # Project documentation and status
+├── scripts/
+│   ├── generate-screenshots.sh # Automated screenshot generation (Docker/Podman)
+│   ├── take-screenshots.js     # Playwright script for capturing media
+│   ├── package.json            # Node.js dependencies (Playwright)
+│   └── README.md               # Detailed screenshot generation docs
+└── screenshots/            # Generated media files (PNGs and GIFs)
 ```
 
 </details>
@@ -213,6 +217,21 @@ Components communicate via global functions exposed on the `window` object:
 - Firefox: ✅ Full support
 - Safari: ✅ Full support
 - IE11: ❌ Not supported (requires modern ES6+ features)
+
+</details>
+
+<details>
+<summary><strong>Screenshot Generation</strong></summary>
+
+All screenshots and animated GIFs in this README are generated automatically using Playwright. Run from the project root:
+
+```bash
+./scripts/generate-screenshots.sh
+```
+
+**Prerequisites**: Docker or Podman (auto-detected). The script handles everything: starts a local server, runs Playwright in a container, generates all media, and cleans up.
+
+See `scripts/README.md` for detailed documentation, customization options, and troubleshooting.
 
 </details>
 
