@@ -83,7 +83,6 @@ Preview exactly what will run before you copy to clipboard:
 - Light, dark, and auto themes
 - Resizable and collapsible sidebar
 - Customizable variable colors
-- Mobile-friendly responsive design
 
 ## 🚀 Quick Start
 
@@ -263,6 +262,8 @@ See `scripts/README.md` for detailed documentation, customization options, and t
 <details>
 <summary><strong>Planned Enhancements 🚀</strong></summary>
 
+
+- [ ] Mobile-friendly UI refactor
 - [ ] Keyboard shortcuts (Ctrl+S to save, etc.)
 - [ ] Drag-and-drop snippet reordering
 - [ ] Import/export individual snippets
@@ -289,7 +290,5 @@ This project is provided as-is for personal use. The [pet CLI tool](https://gith
 <div align="center">
 
 **Why "Veterinarian"?** Because it's a tool to "doctor up" your **pet** snippet files! 🩺
-
-Made with ☕ for command-line enthusiasts
 
 </div>

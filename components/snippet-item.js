@@ -79,6 +79,13 @@ class SnippetItem extends HTMLElement {
           align-items: center;
           gap: 0.875rem;
           border-bottom: 1px solid var(--border-primary, #e0e0e0);
+          flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+          .snippet-header {
+            padding: 0.75rem;
+            gap: 0.5rem;
+          }
         }
         .default-bg {
           background-color: var(--bg-zebra-even, #f9f9f9);
@@ -88,9 +95,17 @@ class SnippetItem extends HTMLElement {
           width: 18px;
           height: 18px;
           accent-color: var(--accent-primary, #339af0);
+          flex-shrink: 0;
+        }
+        @media (max-width: 640px) {
+          .snippet-header input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+          }
         }
         .snippet-title-input {
           flex: 1;
+          min-width: 200px;
           border: 1px solid var(--border-primary, #e0e0e0);
           border-radius: 6px;
           padding: 0.625rem 0.75rem;
@@ -99,6 +114,14 @@ class SnippetItem extends HTMLElement {
           background-color: var(--bg-tertiary, #f1f3f5);
           color: var(--text-primary, #2c3e50);
           transition: all 0.2s ease;
+        }
+        @media (max-width: 640px) {
+          .snippet-title-input {
+            width: 100%;
+            flex-basis: 100%;
+            order: 1;
+            min-width: unset;
+          }
         }
         .snippet-title-input:focus {
           outline: none;
@@ -112,6 +135,15 @@ class SnippetItem extends HTMLElement {
         .snippet-actions {
           display: flex;
           gap: 0.25rem;
+          flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+          .snippet-actions {
+            order: 2;
+            gap: 0.375rem;
+            width: 100%;
+            justify-content: flex-end;
+          }
         }
         .snippet-body {
           padding: 1.25rem;
