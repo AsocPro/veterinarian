@@ -461,6 +461,13 @@ body {
     margin-left: -100%;
   }
 
+  .btn-icon#sidebar-toggle {
+    background-color: var(--bg-secondary);
+    box-shadow: var(--shadow-md);
+    z-index: 101;
+    position: relative;
+  }
+
   .modal-dialog {
     min-width: 90vw;
     max-width: 95vw;
