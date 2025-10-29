@@ -274,9 +274,7 @@ See `scripts/README.md` for detailed documentation, customization options, and t
 
 ## 🤝 Contributing
 
-This is a personal project, but feel free to fork and customize for your needs! If you find bugs or have feature suggestions, please open an issue on GitHub.
-
-## 📜 License
+**Note**: Veterinarian is an early-stage project under active development. While it's fully functional, you may encounter bugs or rough edges. Please report any issues, feature requests, or feedback by [opening an issue on GitHub](https://github.com/asocpro/veterinarian/issues) - your input helps make this tool better!
 
 This project is provided as-is for personal use. The [pet CLI tool](https://github.com/knqyf263/pet) is a separate project by [knqyf263](https://github.com/knqyf263).
 
