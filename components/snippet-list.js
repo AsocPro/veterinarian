@@ -89,86 +89,127 @@ class SnippetList extends HTMLElement {
           display: block;
         }
         .controls-header {
-          background-color: var(--bg-secondary, #fff);
-          border-bottom: 2px solid var(--border-primary, #ddd);
-          padding: 1rem 1.5rem;
+          background: var(--bg-secondary, #fff);
+          border-bottom: 2px solid var(--border-primary, #e0e0e0);
+          padding: var(--spacing-lg, 1rem) var(--spacing-xl, 1.5rem);
           display: flex;
           flex-wrap: wrap;
-          gap: 1rem;
+          gap: var(--spacing-lg, 1rem);
           align-items: center;
           position: sticky;
           top: 0;
           z-index: 10;
+          box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+          backdrop-filter: blur(10px);
         }
         .control-group {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: var(--spacing-sm, 0.5rem);
         }
         .control-group label {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: var(--spacing-sm, 0.5rem);
           font-size: 14px;
+          font-weight: 500;
           cursor: pointer;
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: color var(--transition-base, 0.2s ease);
+        }
+        .control-group label:hover {
+          color: var(--accent-primary, #339af0);
+        }
+        .control-group label input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          accent-color: var(--accent-primary, #339af0);
+          cursor: pointer;
         }
         .search-input {
-          padding: 0.5rem;
-          border: 1px solid var(--border-secondary, #ccc);
-          border-radius: 4px;
+          padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 0.75rem);
+          border: 1px solid var(--border-secondary, #d0d0d0);
+          border-radius: var(--radius-md, 6px);
           font-size: 14px;
-          min-width: 250px;
-          background-color: var(--button-bg, #fff);
-          color: var(--text-primary, #333);
+          min-width: 280px;
+          background-color: var(--bg-tertiary, #f1f3f5);
+          color: var(--text-primary, #2c3e50);
+          transition: all var(--transition-base, 0.2s ease);
         }
         .search-input:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
+          background-color: var(--bg-secondary, #fff);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .search-input:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
         .tag-filter {
           position: relative;
         }
         .tag-dropdown {
           position: absolute;
-          top: 100%;
+          top: calc(100% + var(--spacing-xs, 0.25rem));
           left: 0;
           background: var(--bg-secondary, #fff);
-          border: 1px solid var(--border-secondary, #ccc);
-          border-radius: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          max-height: 300px;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: var(--radius-md, 6px);
+          box-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1));
+          max-height: 320px;
           overflow-y: auto;
-          min-width: 200px;
+          min-width: 220px;
           z-index: 100;
           display: none;
+          animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .tag-dropdown.open {
           display: block;
         }
         .tag-option {
-          padding: 0.5rem 1rem;
+          padding: var(--spacing-sm, 0.5rem) var(--spacing-lg, 1rem);
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          color: var(--text-primary, #333);
+          gap: var(--spacing-sm, 0.5rem);
+          color: var(--text-primary, #2c3e50);
+          transition: all var(--transition-fast, 0.15s ease);
+          font-size: 13px;
         }
         .tag-option:hover {
-          background-color: var(--button-hover, #f5f5f5);
+          background-color: var(--bg-tertiary, #f1f3f5);
         }
         .tag-option input {
           cursor: pointer;
+          width: 16px;
+          height: 16px;
+          accent-color: var(--accent-primary, #339af0);
         }
         .snippet-list {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 1rem;
+          padding: var(--spacing-xl, 1.5rem) var(--spacing-lg, 1rem);
         }
         .empty-state {
           text-align: center;
-          padding: 3rem 1rem;
-          color: var(--text-secondary, #999);
+          padding: var(--spacing-2xl, 2rem) var(--spacing-lg, 1rem);
+          color: var(--text-secondary, #6c757d);
+          font-size: 15px;
+        }
+        .empty-state-icon {
+          font-size: 3rem;
+          margin-bottom: var(--spacing-lg, 1rem);
+          opacity: 0.3;
         }
       </style>
       <div class="controls-header">

@@ -15,56 +15,72 @@ class FileList extends HTMLElement {
       <style>
         :host {
           display: block;
+          height: 100%;
         }
         .file-controls {
-          padding: 1rem;
-          border-bottom: 1px solid var(--border-primary, #ddd);
+          padding: var(--spacing-lg, 1rem);
+          border-bottom: 1px solid var(--border-primary, #e0e0e0);
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: var(--spacing-sm, 0.5rem);
+          background-color: var(--bg-secondary, #fff);
         }
         .file-list {
-          padding: 0.5rem;
+          padding: var(--spacing-sm, 0.5rem);
         }
         .file-item {
-          padding: 0.75rem;
-          border-bottom: 1px solid var(--border-primary, #eee);
+          padding: var(--spacing-md, 0.75rem) var(--spacing-lg, 1rem);
+          border-bottom: 1px solid var(--border-primary, #e0e0e0);
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: var(--spacing-sm, 0.5rem);
+          transition: all var(--transition-base, 0.2s ease);
+          border-radius: var(--radius-md, 6px);
+          margin-bottom: var(--spacing-xs, 0.25rem);
+        }
+        .file-item:hover {
+          background-color: var(--bg-tertiary, #f1f3f5);
         }
         .file-item.selected {
-          background-color: var(--bg-highlight-blue1, #e3f2fd);
-          border-left: 3px solid var(--highlight-border, #2196f3);
-          padding-left: calc(0.75rem - 3px);
+          background: linear-gradient(90deg, var(--bg-highlight-blue1, #e7f5ff) 0%, var(--bg-highlight-blue2, #d0ebff) 100%);
+          border-left: 3px solid var(--accent-primary, #339af0);
+          padding-left: calc(var(--spacing-lg, 1rem) - 3px);
+          box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
         }
         .file-name {
           flex: 1;
           font-size: 13px;
+          font-weight: 500;
           word-break: break-word;
           cursor: pointer;
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: color var(--transition-base, 0.2s ease);
         }
         .file-name:hover {
-          color: var(--highlight-border, #2196f3);
+          color: var(--accent-primary, #339af0);
         }
         .file-name.dirty::after {
           content: ' *';
-          color: #f44336;
+          color: var(--danger, #fa5252);
           font-weight: bold;
+          font-size: 16px;
         }
         .file-name-input {
           flex: 1;
           font-size: 13px;
-          padding: 0.25rem;
-          border: 1px solid var(--highlight-border, #2196f3);
-          border-radius: 3px;
+          padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+          border: 1px solid var(--accent-primary, #339af0);
+          border-radius: var(--radius-sm, 4px);
           background-color: var(--bg-secondary, #fff);
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .file-name-input:focus {
+          outline: none;
         }
         .file-actions {
           display: flex;
-          gap: 0.25rem;
+          gap: var(--spacing-xs, 0.25rem);
         }
       </style>
       <div class="file-controls">

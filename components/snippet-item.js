@@ -16,10 +16,30 @@ class SnippetItem extends HTMLElement {
     const tags = snippet.tag || [];
     const output = snippet.output || '';
 
-    // Parse variables from command (preserve existing structure if re-rendering)
-    // This prevents losing isList state when command doesn't change
+    // Parse variables from command (preserve existing structure AND colors if re-rendering)
+    // This prevents losing isList state and color assignments when command doesn't change
     if (!this.variables || this.lastCommand !== snippet.command) {
-      this.variables = window.VarParser.parseVariables(snippet.command || '');
+      // If we have existing variables with colors, preserve the color map
+      if (this.variables && this.variables.length > 0) {
+        // Save existing color assignments
+        const savedColorMap = new Map();
+        this.variables.forEach(v => {
+          savedColorMap.set(v.name, v.color);
+        });
+
+        // Parse new variables
+        this.variables = window.VarParser.parseVariables(snippet.command || '');
+
+        // Restore color assignments for variables that still exist
+        this.variables.forEach(v => {
+          if (savedColorMap.has(v.name)) {
+            v.color = savedColorMap.get(v.name);
+          }
+        });
+      } else {
+        // First time parsing - just parse normally
+        this.variables = window.VarParser.parseVariables(snippet.command || '');
+      }
       this.lastCommand = snippet.command;
     }
     this.variablesExpanded = this.variablesExpanded || false;
@@ -38,114 +58,140 @@ class SnippetItem extends HTMLElement {
       <style>
         :host {
           display: block;
-          margin-bottom: 1rem;
+          margin-bottom: 1.25rem;
         }
         .snippet-container {
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 8px;
           overflow: hidden;
-          transition: all 0.2s ease;
+          transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+          background-color: var(--bg-secondary, #fff);
+        }
+        .snippet-container:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         .snippet-header {
-          padding: 0.75rem 1rem;
+          padding: 1rem 1.25rem;
           font-weight: 600;
           font-size: 14px;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.875rem;
+          border-bottom: 1px solid var(--border-primary, #e0e0e0);
         }
         .default-bg {
           background-color: var(--bg-zebra-even, #f9f9f9);
         }
         .snippet-header input[type="checkbox"] {
           cursor: pointer;
+          width: 18px;
+          height: 18px;
+          accent-color: var(--accent-primary, #339af0);
         }
         .snippet-title-input {
           flex: 1;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
-          padding: 0.5rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
+          padding: 0.625rem 0.75rem;
           font-size: 14px;
           font-weight: 600;
-          background-color: var(--bg-secondary, #fff);
-          color: var(--text-primary, #333);
+          background-color: var(--bg-tertiary, #f1f3f5);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .snippet-title-input:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
+          background-color: var(--bg-secondary, #fff);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .snippet-title-input:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
         .snippet-actions {
           display: flex;
           gap: 0.25rem;
         }
         .snippet-body {
-          padding: 1rem;
+          padding: 1.25rem;
           background-color: var(--bg-secondary, #fff);
         }
         .snippet-field {
-          margin-bottom: 1rem;
+          margin-bottom: 1.25rem;
         }
         .snippet-field:last-child {
           margin-bottom: 0;
         }
         .field-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-secondary, #666);
-          margin-bottom: 0.25rem;
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-secondary, #6c757d);
+          margin-bottom: 0.5rem;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.8px;
         }
         .field-value textarea {
           width: 100%;
           min-height: 80px;
-          background-color: var(--bg-tertiary, #f5f5f5);
-          padding: 0.75rem;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
-          font-family: 'Courier New', monospace;
+          background-color: var(--bg-tertiary, #f1f3f5);
+          padding: 0.875rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
-          line-height: 1.5;
+          line-height: 1.6;
           resize: vertical;
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .field-value textarea:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
           background-color: var(--bg-secondary, #fff);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .field-value textarea:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
         .command-editor {
           width: 100%;
           min-height: 80px;
-          background-color: var(--bg-tertiary, #f5f5f5);
-          padding: 0.75rem;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
-          font-family: 'Courier New', monospace;
+          background-color: var(--bg-tertiary, #f1f3f5);
+          padding: 0.875rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
-          line-height: 1.5;
+          line-height: 1.6;
           overflow-wrap: break-word;
           white-space: pre-wrap;
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .command-editor:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
           background-color: var(--bg-secondary, #fff);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .command-editor:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
         .command-editor:empty:before {
           content: attr(data-placeholder);
-          color: var(--text-secondary, #999);
+          color: var(--text-secondary, #adb5bd);
         }
         .var-highlight {
-          padding: 2px 4px;
-          border-radius: 3px;
+          padding: 3px 6px;
+          border-radius: 4px;
           font-weight: 600;
           cursor: pointer;
-          transition: opacity 0.2s ease;
+          transition: box-shadow 0.2s ease;
+          display: inline-block;
         }
         .var-highlight:hover {
-          opacity: 0.7;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .field-value ul {
           list-style: none;
@@ -157,28 +203,34 @@ class SnippetItem extends HTMLElement {
           align-items: center;
         }
         .tag-item {
-          background-color: #e3f2fd;
-          color: #1976d2;
-          padding: 0.25rem 0.75rem;
-          border-radius: 12px;
+          background: linear-gradient(135deg, #e7f5ff 0%, #d0ebff 100%);
+          color: #1971c2;
+          padding: 0.375rem 0.875rem;
+          border-radius: 14px;
           font-size: 12px;
-          font-weight: 500;
+          font-weight: 600;
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          border: 1px solid #a5d8ff;
+          transition: box-shadow 0.2s ease;
+        }
+        .tag-item:hover {
+          box-shadow: 0 2px 4px rgba(25, 113, 194, 0.15);
         }
         .tag-remove {
           background: none;
           border: none;
-          color: #1976d2;
+          color: #1971c2;
           cursor: pointer;
           padding: 0;
           font-size: 14px;
           line-height: 1;
           font-weight: bold;
+          transition: color 0.2s ease;
         }
         .tag-remove:hover {
-          color: #d32f2f;
+          color: #e03131;
         }
         .tag-add-container {
           display: flex;
@@ -186,49 +238,61 @@ class SnippetItem extends HTMLElement {
           align-items: center;
         }
         .tag-input {
-          padding: 0.25rem 0.5rem;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
+          padding: 0.375rem 0.75rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
           font-size: 12px;
           background-color: var(--bg-secondary, #fff);
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .tag-input:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
         }
         .output-textarea {
           width: 100%;
           min-height: 60px;
-          background-color: var(--bg-tertiary, #f5f5f5);
-          padding: 0.75rem;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
-          font-family: 'Courier New', monospace;
+          background-color: var(--bg-tertiary, #f1f3f5);
+          padding: 0.875rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
-          line-height: 1.5;
+          line-height: 1.6;
           resize: vertical;
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .output-textarea:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
           background-color: var(--bg-secondary, #fff);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .output-textarea:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
         .field-value pre {
-          background-color: var(--bg-tertiary, #f5f5f5);
-          padding: 0.75rem;
-          border-radius: 4px;
+          background-color: var(--bg-tertiary, #f1f3f5);
+          padding: 0.875rem;
+          border-radius: 6px;
           overflow-x: auto;
           margin: 0;
-          font-family: 'Courier New', monospace;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
-          line-height: 1.5;
-          color: var(--text-primary, #333);
+          line-height: 1.6;
+          color: var(--text-primary, #2c3e50);
+          border: 1px solid var(--border-primary, #e0e0e0);
         }
         .variables-header {
           cursor: pointer;
           user-select: none;
+          transition: color 0.2s ease;
+        }
+        .variables-header:hover {
+          color: var(--accent-primary, #339af0);
         }
         .variables-toggle {
           display: inline-flex;
@@ -237,7 +301,7 @@ class SnippetItem extends HTMLElement {
         }
         .triangle {
           display: inline-block;
-          transition: transform 0.2s ease;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           font-size: 10px;
         }
         .triangle.expanded {
@@ -245,29 +309,46 @@ class SnippetItem extends HTMLElement {
         }
         .variables-section {
           display: none;
-          margin-top: 0.5rem;
-          padding: 0.75rem;
-          background-color: var(--bg-zebra-even, #f9f9f9);
-          border-radius: 4px;
+          margin-top: 0.75rem;
+          padding: 1rem;
+          background: linear-gradient(135deg, var(--bg-zebra-even, #f8f9fa) 0%, var(--bg-tertiary, #f1f3f5) 100%);
+          border-radius: 6px;
+          border: 1px solid var(--border-primary, #e0e0e0);
         }
         .variables-section.expanded {
           display: block;
+          animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .variable-item {
           margin-bottom: 1rem;
-          padding: 0.75rem;
+          padding: 1rem;
           background-color: var(--bg-secondary, #fff);
-          border-radius: 4px;
+          border-radius: 6px;
           border: 1px solid var(--border-primary, #e0e0e0);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          transition: box-shadow 0.2s ease;
+        }
+        .variable-item:hover {
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
         .variable-item:last-child {
           margin-bottom: 0;
         }
         .variable-name {
-          padding: 0.5rem;
-          margin-bottom: 0.5rem;
-          border-radius: 4px;
-          font-family: 'Courier New', monospace;
+          padding: 0.625rem 0.75rem;
+          margin-bottom: 0.75rem;
+          border-radius: 6px;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           font-size: 13px;
         }
         .variable-values {
@@ -277,22 +358,25 @@ class SnippetItem extends HTMLElement {
         }
         .variable-value-row {
           display: flex;
-          gap: 0.5rem;
+          gap: 0.625rem;
           align-items: center;
-          padding: 0.25rem;
-          border-radius: 4px;
-          transition: all 0.05s ease;
+          padding: 0.375rem;
+          border-radius: 6px;
+          transition: all 0.2s ease;
           position: relative;
+        }
+        .variable-value-row:hover {
+          background-color: var(--bg-tertiary, #f1f3f5);
         }
         .variable-value-row.draggable {
           cursor: grab;
         }
         .variable-value-row.dragging {
-          opacity: 0.3;
+          opacity: 0.4;
           cursor: grabbing;
-          transform: scale(0.9) rotate(2deg);
           background-color: var(--bg-highlight-blue1);
-          border: 1px solid #2196f3;
+          border: 2px solid var(--accent-primary, #339af0);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         .variable-value-row.drag-over::before {
           content: '';
@@ -331,29 +415,40 @@ class SnippetItem extends HTMLElement {
         .drag-handle {
           cursor: grab;
           color: var(--text-secondary);
-          font-size: 1rem;
+          font-size: 1.1rem;
           line-height: 1;
           user-select: none;
           display: flex;
           align-items: center;
-          padding: 0 0.25rem;
+          padding: 0.25rem;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+        .drag-handle:hover {
+          background-color: var(--button-hover, #f8f9fa);
+          color: var(--accent-primary, #339af0);
         }
         .drag-handle:active {
           cursor: grabbing;
         }
         .variable-input {
           flex: 1;
-          padding: 0.5rem;
-          border: 1px solid var(--border-primary, #ddd);
-          border-radius: 4px;
+          padding: 0.625rem 0.75rem;
+          border: 1px solid var(--border-primary, #e0e0e0);
+          border-radius: 6px;
           font-size: 13px;
-          font-family: 'Courier New', monospace;
+          font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', monospace;
           background-color: var(--bg-secondary, #fff);
-          color: var(--text-primary, #333);
+          color: var(--text-primary, #2c3e50);
+          transition: all 0.2s ease;
         }
         .variable-input:focus {
           outline: none;
-          border-color: var(--highlight-border, #2196f3);
+          border-color: var(--accent-primary, #339af0);
+          box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.1);
+        }
+        .variable-input:hover {
+          border-color: var(--border-hover, #a0a0a0);
         }
       </style>
       <div class="snippet-container">
@@ -710,11 +805,41 @@ class SnippetItem extends HTMLElement {
 
   /**
    * Render command with highlighted variables
+   * Uses the color assignments from this.variables to ensure consistency
    */
   renderHighlightedCommand(command) {
     if (!command) return '';
 
-    const positions = window.VarParser.getVariablePositions(command);
+    // Build a map of variable names to colors from our stored variables
+    const colorMap = new Map();
+    if (this.variables) {
+      this.variables.forEach(v => {
+        colorMap.set(v.name, v.color);
+      });
+    }
+
+    // Find all variable positions manually to avoid resetting color assignments
+    const varRegex = /<([^>]+)>/g;
+    const positions = [];
+    let match;
+
+    while ((match = varRegex.exec(command)) !== null) {
+      const fullMatch = match[1];
+      let varName = fullMatch;
+
+      if (fullMatch.includes('=')) {
+        varName = fullMatch.split('=')[0].trim();
+      }
+
+      positions.push({
+        name: varName,
+        start: match.index,
+        end: match.index + match[0].length,
+        fullText: match[0],
+        color: colorMap.get(varName) || '#999' // Use stored color or fallback
+      });
+    }
+
     if (positions.length === 0) {
       return this.escapeHtml(command);
     }
