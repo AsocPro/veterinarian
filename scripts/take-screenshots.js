@@ -283,7 +283,7 @@ async function recordVariableEditingDemo() {
     viewport: { width: 1000, height: 1000 },
     recordVideo: {
       dir: videosDir,
-      size: { width: 1000, height: 1000}
+      size: { width: 1000, height: 1000 }
     }
   });
 
@@ -324,10 +324,15 @@ async function recordVariableEditingDemo() {
       const variablesToggle = shadowRoot?.getElementById('variables-toggle');
       if (variablesToggle) variablesToggle.click();
     });
-    await page.waitForTimeout(1000); // Wait for expansion animation
+    await page.waitForTimeout(1500); // Wait for expansion animation
 
-    console.log('🎬 Recording variable editing actions...');
-    await page.waitForTimeout(1000); // Pause before starting actions
+    console.log('🎬 Everything loaded, pausing before actions start...');
+
+    // Record the timestamp when we're ready to start (for trimming later)
+    const recordingStartTime = Date.now();
+
+    // Wait a bit longer so the GIF starts clean
+    await page.waitForTimeout(2000);
 
     // Action 1: Type in the path field
     console.log('   ✍️  Typing in path field...');
@@ -424,7 +429,8 @@ async function recordVariableEditingDemo() {
       x: Math.round(boundingBox.x),
       y: Math.round(boundingBox.y),
       width: Math.round(boundingBox.width),
-      height: Math.round(boundingBox.height)
+      height: Math.round(boundingBox.height),
+      trimStart: 4 // Trim first 4 seconds (loading + expansion time)
     };
 
   } catch (error) {
@@ -493,6 +499,13 @@ async function convertVideoToGif(videoPath, outputPath, cropInfo = null) {
   const paletteFile = path.join(path.dirname(videoPath), 'palette.png');
 
   try {
+    // Build input options for trimming
+    let inputOptions = '';
+    if (cropInfo && cropInfo.trimStart) {
+      console.log(`⏭️  Trimming first ${cropInfo.trimStart} seconds...`);
+      inputOptions = `-ss ${cropInfo.trimStart} `;
+    }
+
     // Build crop filter if crop info provided
     let cropFilter = '';
     if (cropInfo) {
@@ -501,10 +514,10 @@ async function convertVideoToGif(videoPath, outputPath, cropInfo = null) {
     }
 
     console.log('🎨 Generating color palette...');
-    await execPromise(`ffmpeg -i "${videoPath}" -vf "${cropFilter}fps=15,scale=-1:-1:flags=lanczos,palettegen" -y "${paletteFile}"`);
+    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -vf "${cropFilter}fps=15,scale=-1:-1:flags=lanczos,palettegen" -y "${paletteFile}"`);
 
     console.log('🎞️  Converting to GIF...');
-    await execPromise(`ffmpeg -i "${videoPath}" -i "${paletteFile}" -filter_complex "${cropFilter}fps=15,scale=-1:-1:flags=lanczos[x];[x][1:v]paletteuse" -loop 0 -y "${outputPath}"`);
+    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -i "${paletteFile}" -filter_complex "${cropFilter}fps=15,scale=-1:-1:flags=lanczos[x];[x][1:v]paletteuse" -loop 0 -y "${outputPath}"`);
 
     // Clean up
     fs.unlinkSync(paletteFile);
