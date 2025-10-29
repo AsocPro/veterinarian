@@ -18,6 +18,7 @@
   --bg-primary: #f8f9fa;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f3f5;
+  --bg-input-dark: #e9ecef;
   --bg-zebra-odd: #ffffff;
   --bg-zebra-even: #f8f9fa;
   --bg-highlight-blue1: #e7f5ff;
@@ -55,6 +56,7 @@
   --bg-primary: #1a1b1e;
   --bg-secondary: #25262b;
   --bg-tertiary: #2c2e33;
+  --bg-input-dark: #1a1b1e;
   --bg-zebra-odd: #25262b;
   --bg-zebra-even: #2c2e33;
   --bg-highlight-blue1: #1e3a5f;

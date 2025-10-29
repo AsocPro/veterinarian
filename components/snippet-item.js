@@ -111,7 +111,7 @@ class SnippetItem extends HTMLElement {
           padding: 0.625rem 0.75rem;
           font-size: 14px;
           font-weight: 600;
-          background-color: var(--bg-tertiary, #f1f3f5);
+          background-color: var(--bg-input-dark, #e9ecef);
           color: var(--text-primary, #2c3e50);
           transition: all 0.2s ease;
         }
