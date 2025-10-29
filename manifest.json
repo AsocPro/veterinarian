@@ -2,7 +2,7 @@
   "name": "Veterinarian",
   "short_name": "Veterinarian",
   "description": "Edit and manage pet CLI snippet TOML files",
-  "start_url": "/",
+  "start_url": "/veterinarian",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
