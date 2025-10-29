@@ -1,6 +1,6 @@
 {
-  "name": "Pet Snippet Editor",
-  "short_name": "Pet Snippets",
+  "name": "Veterinarian",
+  "short_name": "Veterinarian",
   "description": "Edit and manage pet CLI snippet TOML files",
   "start_url": "/",
   "display": "standalone",
