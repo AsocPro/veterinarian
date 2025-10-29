@@ -167,13 +167,11 @@ $CONTAINER_CMD run --rm \
     -w /scripts \
     -e SCREENSHOT_URL="$TARGET_URL" \
     mcr.microsoft.com/playwright:v1.56.0-jammy \
-    /bin/bash -c "npm install && node take-screenshots.js"
+    /bin/bash -c "apt-get update -qq && apt-get install -y -qq gifsicle && npm install && node take-screenshots.js"
 
 # Cleanup happens automatically via trap
 echo -e "\n${GREEN}╔═══════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║     Screenshots Generated! 🎉        ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}\n"
 
-echo -e "📁 Screenshots saved to: ${BLUE}screenshots/${NC}"
-echo -e "\n${YELLOW}Note: The animated GIF (variable-editing-demo.gif) needs to be created manually.${NC}"
-echo -e "${YELLOW}See scripts/README.md for instructions.${NC}\n"
+echo -e "📁 Screenshots saved to: ${BLUE}screenshots/${NC}\n"

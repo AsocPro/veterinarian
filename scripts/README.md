@@ -22,9 +22,10 @@ npm run screenshots
 This will:
 - ✅ Auto-detect Docker or Podman
 - ✅ Pull Playwright container image if needed
+- ✅ Install gifsicle automatically in container for GIF optimization
 - ✅ Start a local server automatically
 - ✅ Run Playwright in container (no host dependencies!)
-- ✅ Take all screenshots
+- ✅ Take all screenshots and generate optimized GIF
 - ✅ Stop the server and clean up containers when done
 
 **Why containers?** Running Playwright in a container means you don't need to install browser dependencies on your host system. Everything runs in an isolated environment. Works with both Docker and Podman!
@@ -66,12 +67,21 @@ The script creates the following media files in the `screenshots/` directory:
 
 ### Requirements for GIF generation
 
-The animated GIF requires **ffmpeg** to be installed:
-- **macOS**: `brew install ffmpeg`
-- **Ubuntu/Debian**: `sudo apt-get install ffmpeg`
-- **Fedora**: `sudo dnf install ffmpeg`
+The animated GIF requires **ffmpeg** to be installed in the container (already included in the Playwright image). **Gifsicle** is automatically installed in the container for optimal GIF compression.
 
-If ffmpeg is not available, the script will save the video file and provide manual conversion instructions.
+When using the containerized method (recommended), all dependencies are handled automatically.
+
+If using the manual method without containers, you'll need to install:
+- **ffmpeg**:
+  - **macOS**: `brew install ffmpeg`
+  - **Ubuntu/Debian**: `sudo apt-get install ffmpeg`
+  - **Fedora**: `sudo dnf install ffmpeg`
+- **gifsicle** (optional but recommended):
+  - **macOS**: `brew install gifsicle`
+  - **Ubuntu/Debian**: `sudo apt-get install gifsicle`
+  - **Fedora**: `sudo dnf install gifsicle`
+
+Gifsicle can typically reduce file size by 30-60% with minimal quality loss.
 
 ## Customizing
 
@@ -95,8 +105,10 @@ Add additional screenshot steps in the `takeScreenshots()` function. See the exi
 The script automatically:
 1. Records video of variable editing actions using Playwright
 2. Types in variable fields slowly to show real-time command updates
-3. Selects from dropdown lists
-4. Converts the video to GIF using ffmpeg with optimized palette
+3. Trims the first 4 seconds (loading time) from the video
+4. Crops to just the snippet area
+5. Converts to GIF using ffmpeg with optimized palette (128 colors, diff mode)
+6. Further optimizes with gifsicle if available (typically 30-60% size reduction)
 
 The demo shows:
 - Focused view of a single snippet (1000x1000 viewport)

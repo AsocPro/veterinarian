@@ -513,11 +513,39 @@ async function convertVideoToGif(videoPath, outputPath, cropInfo = null) {
       cropFilter = `crop=${cropInfo.width}:${cropInfo.height}:${cropInfo.x}:${cropInfo.y},`;
     }
 
-    console.log('🎨 Generating color palette...');
-    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -vf "${cropFilter}fps=15,scale=-1:-1:flags=lanczos,palettegen" -y "${paletteFile}"`);
+    console.log('🎨 Generating optimized color palette...');
+    // Use palettegen with stats_mode to optimize for the actual colors used
+    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -vf "${cropFilter}fps=15,scale=-1:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff" -y "${paletteFile}"`);
 
-    console.log('🎞️  Converting to GIF...');
-    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -i "${paletteFile}" -filter_complex "${cropFilter}fps=15,scale=-1:-1:flags=lanczos[x];[x][1:v]paletteuse" -loop 0 -y "${outputPath}"`);
+    console.log('🎞️  Converting to optimized GIF...');
+    // Use paletteuse with optimized dithering for smaller file size
+    await execPromise(`ffmpeg ${inputOptions}-i "${videoPath}" -i "${paletteFile}" -filter_complex "${cropFilter}fps=15,scale=-1:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=2:diff_mode=rectangle" -loop 0 -y "${outputPath}"`);
+
+    const originalSize = fs.statSync(outputPath).size;
+    console.log(`✅ GIF created: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
+
+    // Further optimize with gifsicle if available
+    try {
+      await execPromise('gifsicle --version');
+      console.log('🗜️  Optimizing with gifsicle...');
+
+      const tempOptimized = outputPath + '.tmp';
+      await execPromise(`gifsicle -O3 --lossy=80 "${outputPath}" -o "${tempOptimized}"`);
+
+      const optimizedSize = fs.statSync(tempOptimized).size;
+      const savings = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
+
+      // Replace original with optimized version
+      fs.unlinkSync(outputPath);
+      fs.renameSync(tempOptimized, outputPath);
+
+      console.log(`   Reduced by ${savings}% → ${(optimizedSize / 1024 / 1024).toFixed(2)} MB`);
+    } catch (error) {
+      console.log('   ℹ️  gifsicle not found - install for better compression:');
+      console.log('      - macOS: brew install gifsicle');
+      console.log('      - Ubuntu/Debian: sudo apt-get install gifsicle');
+      console.log('      - Fedora: sudo dnf install gifsicle');
+    }
 
     // Clean up
     fs.unlinkSync(paletteFile);
